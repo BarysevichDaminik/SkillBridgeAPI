@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace SkillBridgeAPI.Models;
 
@@ -21,13 +23,18 @@ public partial class User
 
     public string? Username { get; set; }
 
+    [JsonIgnore]
     public virtual ICollection<Exchange> ExchangeUserId1Navigations { get; set; } = new List<Exchange>();
 
+    [JsonIgnore]
     public virtual ICollection<Exchange> ExchangeUserId2Navigations { get; set; } = new List<Exchange>();
 
+    [JsonIgnore]
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
+    [JsonIgnore]
     public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
-
+    
+    [JsonIgnore]
     public virtual ICollection<Userskill> Userskills { get; set; } = new List<Userskill>();
 }

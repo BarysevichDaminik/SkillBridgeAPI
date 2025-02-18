@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SkillBridgeAPI.Models;
 
@@ -13,9 +14,12 @@ public partial class Chat
 
     public DateTime? CreatedDate { get; set; }
 
+    [JsonIgnore]
     public virtual Exchange? Exchange { get; set; }
 
+    [JsonIgnore]
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
+    [JsonIgnore]
     public virtual ICollection<Exchange> Exchanges { get; set; } = new List<Exchange>();
 }
