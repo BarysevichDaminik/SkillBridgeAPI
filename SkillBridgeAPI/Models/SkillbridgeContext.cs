@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SkillBridgeAPI.Models;
 
-public partial class SkillBridgeDbContext : DbContext
+public partial class SkillbridgeContext : DbContext
 {
-    public SkillBridgeDbContext()
+    public SkillbridgeContext()
     {
     }
 
-    public SkillBridgeDbContext(DbContextOptions<SkillBridgeDbContext> options)
+    public SkillbridgeContext(DbContextOptions<SkillbridgeContext> options)
         : base(options)
     {
     }
@@ -35,8 +35,9 @@ public partial class SkillBridgeDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresEnum<SkillBridgeAPI.Models.ExchangeStatusEnum>("exchange_status_enum");
-        modelBuilder.HasPostgresEnum<SkillBridgeAPI.Models.UserStatusEnum>("user_status_enum");
+        modelBuilder
+            .HasPostgresEnum("exchange_status_enum", new[] { "pending", "active", "completed", "cancelled", "disputed" })
+            .HasPostgresEnum("user_status_enum", new[] { "active", "inactive", "pending", "blocked" });
 
         modelBuilder.Entity<Chat>(entity =>
         {
@@ -185,6 +186,9 @@ public partial class SkillBridgeDbContext : DbContext
             entity.Property(e => e.FirstName).HasColumnName("first_name");
             entity.Property(e => e.LastName).HasColumnName("last_name");
             entity.Property(e => e.PwdHash).HasColumnName("pwd_hash");
+            entity.Property(e => e.SubscriptionStatus)
+                .HasDefaultValue(false)
+                .HasColumnName("subscription_status");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");

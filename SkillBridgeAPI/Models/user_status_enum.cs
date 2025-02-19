@@ -1,10 +1,10 @@
 ﻿namespace SkillBridgeAPI.Models
 {
-    public enum UserStatusEnum
+    public enum user_status_enum
     {
         active,
-        inactive,
-        pending,
-        blocked
+	    inactive,
+	    pending,
+	    blocked
     }
 }

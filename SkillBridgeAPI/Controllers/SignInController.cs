@@ -11,34 +11,34 @@ namespace SkillBridgeAPI.Controllers
 {
     [ApiController]
     [Route("[Controller]")]
-    public class SignInController : ControllerBase
+    public class SignController : ControllerBase
     {
-        SkillBridgeDbContext Context { get; set; }
-        public SignInController(SkillBridgeDbContext context) 
+        SkillbridgeContext Context { get; set; }
+        public SignController(SkillbridgeContext context)
         {
             Context = context;
         }
 
         [HttpPost("/check")]
-        public async Task<IResult> Check([FromForm] long id, [FromForm] string hash)
+        public async Task<IResult> Check([FromForm] UserCredentialsWithHash creds)
         {
-            User? user = await Context.Users.FirstOrDefaultAsync(u => u.UserId == id);
+            User? user = await Context.Users.FirstOrDefaultAsync(u => u.Username!.Equals(creds.Username));
             if (user == null) { return Results.NotFound(); }
-            return user.PwdHash.Equals(hash) ? Results.Ok() : Results.Unauthorized();
+            return user.PwdHash.Equals(creds.Hash, StringComparison.OrdinalIgnoreCase) ? Results.Ok() : Results.Unauthorized();
         }
 
-        [HttpPost]
-        public async Task<IResult> Post([FromBody] UserCredentials creds)
+        [HttpPost("/addUser")]
+        public async Task<IResult> Post([FromBody] UserCredentialsWithPwd creds)
         {
-            if (creds.Username is not null && creds.Email is not null &&  creds.PasswordHash is not null)
+            if (creds.Username is not null && creds.Email is not null && creds.Password is not null)
             {
                 User user = new User()
                 {
                     Email = creds.Email,
                     Username = creds.Username,
-                    PwdHash = Encoding.UTF8.GetString(SHA3_512.HashData(Encoding.UTF8.GetBytes(creds.PasswordHash)))
+                    PwdHash = BitConverter.ToString(SHA3_512.HashData(Encoding.UTF8.GetBytes(creds.Password))).Replace("-", "")
                 };
-                if (!user.IsValid()) 
+                if (!user.IsValid())
                     return Results.BadRequest();
                 await Context.Users.AddAsync(user);
                 await Context.SaveChangesAsync();
