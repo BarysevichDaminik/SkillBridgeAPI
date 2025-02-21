@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - "5431:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 9435
+      POSTGRES_DB: skillbridge
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  web:
+    build: ./
+    ports:
+      - "5000:8080"
+    environment:
+      DATABASE_URL: "Host=db;Port=5432;Database=skillbridge;Username=postgres;Password=9435;"
+    depends_on:
+      - db
+
+volumes:
+  db_data:

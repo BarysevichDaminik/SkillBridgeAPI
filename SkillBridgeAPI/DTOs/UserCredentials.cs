@@ -3,15 +3,15 @@ using SkillBridgeAPI.ModelBinders;
 
 namespace SkillBridgeAPI.DTO
 {
-    public class UserCredentialsWithPwd
+    public record UserCredentialsWithPwd
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Username { get; set; } = null!;
+        public string Password { get; set; } = null!;
         public string? Email { get; set; }
     }
-    public class UserCredentialsWithHash
+    public record UserCredentialsWithHash
     {
-        public string Username { get; set; }
-        public string Hash { get; set; }
+        public string Username { get; set; } = null!;
+        public string Hash { get; set; } = null!;
     }
 }
