@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.IdentityModel.Tokens;
 using SkillBridgeAPI.Models;
+using SkillBridgeAPI.Services;
 
 namespace SkillBridgeAPI
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -24,16 +29,19 @@ namespace SkillBridgeAPI
             });
 
             //var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
-            Globals.connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")!;
-            builder.Services.AddDbContext<SkillbridgeContext>(options => options.UseNpgsql(Globals.connectionString));
+            builder.Services.AddDbContext<SkillbridgeContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddAuthentication("JwtScheme").AddScheme<JwtBearerOptions, JwtAuthenticationHandler>("JwtScheme", options => { });
 
             var app = builder.Build();
-            
+
             app.UseCors("AllowFrontend");
 
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
+
+            app.UseAuthentication();
 
             app.MapControllers();
 

@@ -23,6 +23,8 @@ public partial class User
 
     public bool? SubscriptionStatus { get; set; }
 
+    public string Ulid { get; set; } = null!;
+
     public virtual ICollection<Exchange> ExchangeUserId1Navigations { get; set; } = new List<Exchange>();
 
     public virtual ICollection<Exchange> ExchangeUserId2Navigations { get; set; } = new List<Exchange>();

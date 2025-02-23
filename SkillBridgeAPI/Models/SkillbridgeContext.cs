@@ -29,9 +29,6 @@ public partial class SkillbridgeContext : DbContext
 
     public virtual DbSet<Userskill> Userskills { get; set; }
 
-    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //    => optionsBuilder.UseNpgsql(Globals.connectionString);
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -188,6 +185,7 @@ public partial class SkillbridgeContext : DbContext
             entity.Property(e => e.SubscriptionStatus)
                 .HasDefaultValue(false)
                 .HasColumnName("subscription_status");
+            entity.Property(e => e.Ulid).HasColumnName("ulid");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");

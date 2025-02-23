@@ -2,94 +2,48 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System;
 using System.Security.Cryptography;
+using Newtonsoft.Json;
+using System.Buffers.Text;
 
 namespace SkillBridgeAPI.Services
 {
     public static class JWTService
     {
-        private const string PublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqsxgmLbxRvkftBbUgfma QoUj48ZEgFfqguncV9qVdjo2H0to6MXUtH42mqdGxSKO0evETRdqLfzX1CZpr9mm I8jDWoP7DYm9DCR7cSe+YnPqr2a9LLQh/slA6WCHBq/kN5u88r3tc4q63g0B9Zaw xSO8r/YCG+V8rBzIHlv2sM5YFrWpO6v6nGuk5xRvCMKfdeDTG/Tzrs/qMr7veRUJ MrD7edNDot5k+9n+9Ucil+K0xQPPyGozuS1YtPQkTLTx7qRveV+qrrVAvKqso3jO +iJRR6bjzsFWN5UI9KT1Wiu7ifwC6RSNiZg50lg8003Vj6uQqLe3svWgq1CL2T+0 lQIDAQAB";
-        private const string SecretKey = "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCqzGCYtvFG+R+0FtSB+ZpChSPjxkSAV+qC6dxX2pV2OjYfS2joxdS0fjaap0bFIo7R68RNF2ot/NfUJmmv2aYjyMNag/sNib0MJHtxJ75ic+qvZr0stCH+yUDpYIcGr+Q3m7zyve1zirreDQH1lrDFI7yv9gIb5XysHMgeW/awzlgWtak7q/qca6TnFG8Iwp914NMb9POuz+oyvu95FQkysPt500Oi3mT72f71RyKX4rTFA8/IajO5LVi09CRMtPHupG95X6qutUC8qqyjeM76IlFHpuPOwVY3lQj0pPVaK7uJ/ALpFI2JmDnSWDzTTdWPq5Cot7ey9aCrUIvZP7SVAgMBAAECggEAC48DldeCR5Z8yJq87JjgPCfiJbwuuZgkNOeFCRBatLgRc+0OCfwNaN5GbWaW+aiyN/mifMHHZppUXt/vShPK1GQgowOzM0ItiuCogUq6bdOWFSMOTV6uvZ06voXQ+CkMzZ3wBmYdEjMtcfE5FI41+KQc/7QrMLPHS/yHUdVRF2ZF1xLH9KLIscNnJUxmr1OESYfOlO1kEaSOcfZSTQga7NOPMXBVoouxqTDQJstryvJ5T+oZpgV6btR+ByHWSmTy4PGsmlWdddmDx1aKGMnPcajAh93cuX9/V8DJiCtpLyh/sbT3KCocdH/PqVleX6oFDU06NhQJzTNvcJ2GpI/LAQKBgQDWiu5mqeAItmEZIYaIhuhjmFdPWn5L8+x6yTTbk0CPkIPXTvgsg3xx+uJYWIcI2F3onoAUPtXy/8bbYko6sIig98bMIPNGizrzlR3K84UaEO3gq37q82tvCeeKyhozyx7+3z0Wvd5UXbShb4exc4GXGLFNLZopqAk50cb8v49PgQKBgQDLzXxz3hvKsaxou702g5KMTkdydHTRZvwE4N7m7Dkfd+qMyTDviILY/PUSd2khR1RMGp6d98eKRWzKDhv0FSQ1w9GNcxjQaiX23vBWdz84dSzjA8e8teGiYWDN6NcUpLkNAITTOd3xSx6kxuthl6EazcXpDcJaki/3D70lbaWvFQKBgCCCnwuplExdrqsLPIK1xsNI03ov4VGLHfuhP8RCNRdMM95NlifQqOvws5nlmFjLyLc2RXxL5UnUXoLiCxOHqryRr2tBVvwKnx1ILGKTski35gQUmL/rsQz7eD280GmmzwSaOXyXuvgX1wZbizllom6ODFgAoArN7s/3LOsh8AqBAoGAIZwpwhIHE05p2HvdoHfiWzEtpzp9aWtKdKOBHyQl54KnM8CaSWaB7bcJ05nNxKc2x7Y8ImESj0MTxd69zWsPJa69iE5K8VQQHr51dE0GKBFq7aVZ800rgNP+WvbjQYxI2FQVk6AfcgOpchM8DkQrVXhKAz05qCYjsuLtlpaWlGECgYBMhj2H1Kc7KCLQGUtnNKfRKfrgq8RJz0obYeVW3D+mxEafFvdWwN0ctMDVcl10uqc8WwqKMdyI+nwjFABxfqLUDc8zV105msTrs2SqP4SO44pemt8326aobxV1Boy5FiSmaQT8/nZWrBR673ZVggcVHHeJrdcIg9TimbOQmJvIeA==";
+        const string SecretKey = "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDx8faXNCHMjUgFmaNmdjqF2eTCZM+YbDSe1Q3/x6r28d73tpFCZFZjHOL3kK1cKI2cqYp0MlRb5LHlIfSMq8meSIItmItsZQ5CFMCcnixvIWGiTORhER4BP56nkjBECqammt8rdMelgIhM2CLz0Gfu+1LiiW4U8mFJlhjaRD3/nC8s1lh0NsPa+t/VLcScWFDgu71rSMyFGkb60Qcvjh1MkpaiLI9vIBRHVILml5viVZTXYyV0RQuZCQJdC3By+SMznHuHjIx/pMpTOQv+d2C958A7ghFXFpjS9lkBAUGzND+teIjqvzOoLY37huLiW99aYW+cnnBatax/R0yq2Q/ZAgMBAAECggEBAMZVr+urlLl2Z8APfl+UM81eHaUttvAgY9KAnQU8zO26wSkXxGRElHyTRYvkUfjmVZBDe3hdecIK67oF588ZVCIpFm4CSukEvnd1Q6AgGhTPrJW7qsvXmF01pf2AXYipoouZEbEx/ieyAgncdGqiQVErPXrvZgpN12rXXHAw2RIbgo+JOy6TdhNk4HmQqKB/0S73NftvmermyKLzCbd/aeQZobXQrTM6ocHZ0gXDLal0iRQy0eFRTltKKlPzpGpkFq857tFtVkQHPlbbuNXFAcN3GfIA/FZxqnJqU9ZFrzHI142OlffwBGEUPm7vWZNutuMV5ADTgZBp952wHrpii/ECgYEA/AaEA6T6Vq8D0fakWRP54S2Y78eJVRsOWU4rtmF8Ts3BOtmpMS+fz7j6OBq/Dde6Ee5YJ3c1TEERAPEQ5N1FhEPoxm+p2r6mYau4furf3eSWGV9mDgJpaV4/dMzn+gwVSIkkqw/zr5Igj+iGKLIqVv0T+ouzHGB1+uMZ8XIL//MCgYEA9cLAS/dnGXupWHqizEv25G5r4FNEdp7vkZq/5tYRzM0jojHn2/OkOuPg73Ec3riUhe/7PQVC6DTMxNZ6jZOQgamwtIZIU2YC6jKdM0alVQaGq8qKdO7xEv+VrXCvOI889cb1rCb4SYvl68e5koxn/wacu9fpd8EWxWCYfiXKsAMCgYEA68wY1eQUiOfklhzCdcl34JOt5KH3PtY6nZnC0jfxezWNFceyQh/B0TLLgZScrpHpOH+coQgqqLaz9wKVANx5/x8eehLdg5keyIFG9BBC9jO5r/GO5YqiH4CbtGdGn6+QdjZCRX5+TAVXS+2NICRZ8tuERsVQBjvGBr9WdY1z5rsCgYAR/BqOdKB64O3Xp8HaKYT72ojSdcWA2Mi3YxfAENJkpm6BJB3PntjZ5mtDmod+VQupcZJ1OLlYvORvUzLMwYvFsWFZFKqeT8zOzr1qTzUyL7QTRlMzk3jY5xNRCfoIrZLMea7o1kE9QJum0YrnCpdhtl4p8PcI6Hx+HT+Lm8BleQKBgGwerCJNv1rmmPsOJCAHk03uXGCmHiVgow8tFRbT0or2Axd45qr3knLk9QAxfaTWzpm1p8nHAI4TmYUvWau/KCRmlenUqOoHmDmjiZEBP+kLo9pf0mQ1GJx2oqLMHVY01piCX4FDaVrFBiijwBT4p+elmB5tpvs74NRiIgrvyKhT";
         private const string Issuer = "SkillBridgeAPI";
-        private const string Audience = "Frontend";
 
-        public static string CreateToken(long ulid)
+        public static string CreateToken(string ulid)
         {
-            var claims = new List<Claim>
-      {
-        new(JwtRegisteredClaimNames.Sub,
-          ulid.ToString()),
-        new(JwtRegisteredClaimNames.Jti,
-          Ulid.NewUlid().ToString()),
-        new(JwtRegisteredClaimNames.Iat,
-          DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-          ClaimValueTypes.Integer64),
-        new(JwtRegisteredClaimNames.Exp,
-          DateTimeOffset.UtcNow.AddMinutes(1).ToUnixTimeSeconds().ToString(),
-          ClaimValueTypes.Integer64),
-        new(JwtRegisteredClaimNames.Iss, Issuer),
-        new(JwtRegisteredClaimNames.Aud, Audience),
-        new("subscription", "0"),
-        new("admin", "0")
-      };
-            var payload = new JwtPayload(claims);
-
-            var rsaPrivateKey = RSA.Create();
-            ReadOnlySpan<byte> secretKeyBytes = Encoding.UTF8.GetBytes(SecretKey).AsSpan();
-            int bytesRead;
-            rsaPrivateKey.ImportPkcs8PrivateKey(secretKeyBytes, out bytesRead);
-
-            var signingCredentials = new SigningCredentials(new RsaSecurityKey(rsaPrivateKey), SecurityAlgorithms.RsaSha512);
-            var descriptor = new SecurityTokenDescriptor
+            string header = "{\"alg\":\"RsaSha512\",\"typ\":\"JWT\"}";
+            string payload = JsonConvert.SerializeObject(new List<Claim>
             {
-                Subject = new ClaimsIdentity(payload.Claims),
-                SigningCredentials = signingCredentials,
-                Issuer = Issuer,
-                Audience = Audience,
-                Expires = DateTime.UtcNow.AddHours(1)
-            };
+                new(JwtRegisteredClaimNames.Sub, ulid),
+                new(JwtRegisteredClaimNames.Jti, Ulid.NewUlid().ToString()),
+                new(JwtRegisteredClaimNames.Iat,
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                    ClaimValueTypes.Integer64),
+                new(JwtRegisteredClaimNames.Exp,
+                    DateTimeOffset.UtcNow.AddMinutes(2).ToUnixTimeSeconds().ToString(),
+                    ClaimValueTypes.Integer64),
+                new(JwtRegisteredClaimNames.Iss, Issuer),
+                new("subscription", "0"),
+                new("admin", "0")
+            });
 
-            var jwtTokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = jwtTokenHandler.CreateJwtSecurityToken(descriptor);
+            string headerBase64 = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(header));
+            string payloadBase64 = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(payload));
+            string headerAndPayload = $"{headerBase64}.{payloadBase64}";
+            byte[] headerAndPayloadHashed = SHA3_512.HashData(Encoding.UTF8.GetBytes(headerAndPayload));
 
-            return jwtTokenHandler.WriteToken(jwtToken);
-        }
-        public static bool ValidateToken(this string token)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
+            using var rsa = RSA.Create();
+            rsa.ImportPkcs8PrivateKey(Convert.FromBase64String(SecretKey), out _);
 
-            try
-            {
-                var rsaPublicKey = RSA.Create();
-                rsaPublicKey.ImportSubjectPublicKeyInfo(Convert.FromBase64String(PublicKey), out _);
+            byte[] signature = rsa.SignData(headerAndPayloadHashed, HashAlgorithmName.SHA3_512, RSASignaturePadding.Pkcs1);
 
-                var validationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = Issuer,
-                    ValidateAudience = true,
-                    ValidAudience = Audience,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new RsaSecurityKey(rsaPublicKey),
-                    ClockSkew = TimeSpan.Zero
-                };
+            string signatureBase64 = Base64UrlEncoder.Encode(signature);
 
-
-                SecurityToken validatedToken;
-                tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
-            }
-            catch (SecurityTokenException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-
-            return true;
+            return $"{headerAndPayload}.{signatureBase64}";
         }
     }
 }
