@@ -29,11 +29,25 @@ public partial class SkillbridgeContext : DbContext
 
     public virtual DbSet<Userskill> Userskills { get; set; }
 
+    public virtual DbSet<RefreshToken> RefreshToken { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
             .HasPostgresEnum("exchange_status_enum", new[] { "pending", "active", "completed", "cancelled", "disputed" })
             .HasPostgresEnum("user_status_enum", new[] { "active", "inactive", "pending", "blocked" });
+
+        modelBuilder.Entity<RefreshToken>(entity => {
+            entity.HasKey(e => e.TokenId).HasName("token_id");
+
+            entity.ToTable("refresh_token");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(e => e.ExpiredAt).HasColumnName("expired_at").IsRequired();
+            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+
+            entity.HasOne(e => e.User);
+        });
 
         modelBuilder.Entity<Chat>(entity =>
         {
@@ -173,7 +187,6 @@ public partial class SkillbridgeContext : DbContext
             entity.HasIndex(e => e.Email, "User_email_key").IsUnique();
 
             entity.Property(e => e.UserId)
-                .HasDefaultValueSql("nextval('\"User_user_id_seq\"'::regclass)")
                 .HasColumnName("user_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")

@@ -10,7 +10,7 @@ using System.Text;
 
 namespace SkillBridgeAPI.Services
 {
-    public class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
+    public sealed class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
     {
         public JwtAuthenticationHandler(IOptionsMonitor<JwtBearerOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
             : base(options, logger, encoder, clock)
@@ -93,8 +93,7 @@ namespace SkillBridgeAPI.Services
                 return AuthenticateResult.Fail($"Authentication failed: {ex.Message}");
             }
         }
-
-        private bool ValidateToken(string token)
+        static bool ValidateToken(string token)
         {
             string[] parts = token.Split('.');
             if (parts.Length != 3)

@@ -25,7 +25,7 @@ namespace SkillBridgeAPI.Controllers
         {
             User? user = await Context.Users.FirstOrDefaultAsync(u => u.Username!.Equals(creds.Username));
             if (user == null) { return Results.NotFound(); }
-            var token = JWTService.CreateToken(user.Ulid);
+            var token = TokenService.CreateJWTToken(user.Ulid);
             return user.PwdHash.Equals(creds.Hash, StringComparison.OrdinalIgnoreCase) ? Results.Ok(token) : Results.Unauthorized();
         }
 
@@ -46,26 +46,28 @@ namespace SkillBridgeAPI.Controllers
                     return Results.BadRequest();
                 await Context.Users.AddAsync(user);
                 await Context.SaveChangesAsync();
-                var token = JWTService.CreateToken(user.Ulid);
+                var token = TokenService.CreateJWTToken(user.Ulid);
                 return Results.Ok(token);
             }
             return Results.BadRequest();
         }
 
-        [HttpPut("reset")]
+        [HttpPatch("reset")]
         public async Task<IResult> Put([FromForm] string pwd)
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             await Context.Users.ExecuteUpdateAsync(u =>
-                u.SetProperty(u => u.PwdHash, Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(pwd)))));
+                u.SetProperty(u => u.PwdHash, Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(pwd))))
+                .SetProperty(u => u.UpdatedAt, DateTime.UtcNow));
             return Results.Ok();
         }
 
-        //[Authorize]
-        //[HttpDelete("delete")]
-        //public async Task<IResult> Delete()
-        //{
-
-        //}
+        [HttpDelete("delete")]
+        public async Task<IResult> Delete()
+        {
+            var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            await Context.Users.Where(u => u.Ulid == subClaim).ExecuteDeleteAsync();
+            return Results.Ok();
+        }
     }
 }
