@@ -6,6 +6,7 @@ using SkillBridgeAPI.Models;
 using SkillBridgeAPI.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Numerics;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -45,26 +46,18 @@ namespace SkillBridgeAPI.Controllers
                     return Results.BadRequest();
                 await Context.Users.AddAsync(user);
                 await Context.SaveChangesAsync();
-                //var token = JWTService.CreateToken(user.Ulid);
-                return Results.Ok();
+                var token = JWTService.CreateToken(user.Ulid);
+                return Results.Ok(token);
             }
             return Results.BadRequest();
         }
 
         [HttpPut("reset")]
-        public IResult Put()
+        public async Task<IResult> Put([FromForm] string pwd)
         {
-            var token = HttpContext.User.Identities.FirstOrDefault()?.BootstrapContext as JwtSecurityToken;
-            if (token is null) return Results.Unauthorized();
-            long userId = int.Parse(token.Claims.FirstOrDefault(c => c.Type == "sub")?.ToString()!);
-
-            var user1 = Context.Users.FirstOrDefault(u => u.UserId == userId);
-            //User user = new()
-            //{
-            //    Email = creds.Email,
-            //    Username = creds.Username,
-            //    PwdHash = Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(creds.Password)))
-            //};
+            var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            await Context.Users.ExecuteUpdateAsync(u =>
+                u.SetProperty(u => u.PwdHash, Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(pwd)))));
             return Results.Ok();
         }
 
@@ -74,10 +67,5 @@ namespace SkillBridgeAPI.Controllers
         //{
 
         //}
-        [HttpPost("validateToken")]
-        public IResult check()
-        {
-            return Results.Ok();
-        }
     }
 }
