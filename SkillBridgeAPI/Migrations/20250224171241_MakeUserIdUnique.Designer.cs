@@ -12,8 +12,8 @@ using SkillBridgeAPI.Models;
 namespace SkillBridgeAPI.Migrations
 {
     [DbContext(typeof(SkillbridgeContext))]
-    [Migration("20250224133728_RefreshToken")]
-    partial class RefreshToken
+    [Migration("20250224171241_MakeUserIdUnique")]
+    partial class MakeUserIdUnique
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -232,13 +232,11 @@ namespace SkillBridgeAPI.Migrations
                         .HasColumnType("text")
                         .HasColumnName("user_id");
 
-                    b.Property<long>("UserId1")
-                        .HasColumnType("bigint");
-
                     b.HasKey("TokenId")
                         .HasName("token_id");
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("refresh_token", (string)null);
                 });
@@ -467,17 +465,6 @@ namespace SkillBridgeAPI.Migrations
                         .HasConstraintName("reaction_user_id_fkey");
 
                     b.Navigation("Message");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("SkillBridgeAPI.Models.RefreshToken", b =>
-                {
-                    b.HasOne("SkillBridgeAPI.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });

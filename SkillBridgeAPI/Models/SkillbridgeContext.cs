@@ -44,9 +44,6 @@ public partial class SkillbridgeContext : DbContext
 
             entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
             entity.Property(e => e.ExpiredAt).HasColumnName("expired_at").IsRequired();
-            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
-
-            entity.HasOne(e => e.User);
         });
 
         modelBuilder.Entity<Chat>(entity =>
@@ -195,6 +192,7 @@ public partial class SkillbridgeContext : DbContext
             entity.Property(e => e.FirstName).HasColumnName("first_name");
             entity.Property(e => e.LastName).HasColumnName("last_name");
             entity.Property(e => e.PwdHash).HasColumnName("pwd_hash");
+            entity.Property(e => e.LoginAttempts).HasColumnName("login_attempts").HasDefaultValue(0);
             entity.Property(e => e.SubscriptionStatus)
                 .HasDefaultValue(false)
                 .HasColumnName("subscription_status");

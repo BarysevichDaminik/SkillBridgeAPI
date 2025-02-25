@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SkillBridgeAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialMigrations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,6 +15,21 @@ namespace SkillBridgeAPI.Migrations
             migrationBuilder.AlterDatabase()
                 .Annotation("Npgsql:Enum:exchange_status_enum", "pending,active,completed,cancelled,disputed")
                 .Annotation("Npgsql:Enum:user_status_enum", "active,inactive,pending,blocked");
+
+            migrationBuilder.CreateTable(
+                name: "refresh_token",
+                columns: table => new
+                {
+                    TokenId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    expired_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    user_id = table.Column<string>(type: "text", nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("token_id", x => x.TokenId);
+                });
 
             migrationBuilder.CreateTable(
                 name: "skill",
@@ -34,7 +49,8 @@ namespace SkillBridgeAPI.Migrations
                 name: "user",
                 columns: table => new
                 {
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    user_id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     email = table.Column<string>(type: "text", nullable: false),
                     pwd_hash = table.Column<string>(type: "text", nullable: false),
                     first_name = table.Column<string>(type: "text", nullable: true),
@@ -87,28 +103,6 @@ namespace SkillBridgeAPI.Migrations
                     table.ForeignKey(
                         name: "exchange_user_id_2_fkey",
                         column: x => x.user_id_2,
-                        principalTable: "user",
-                        principalColumn: "user_id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "refresh_token",
-                columns: table => new
-                {
-                    TokenId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    expired_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    user_id = table.Column<string>(type: "text", nullable: false),
-                    Token = table.Column<string>(type: "text", nullable: false),
-                    UserId1 = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("token_id", x => x.TokenId);
-                    table.ForeignKey(
-                        name: "FK_refresh_token_user_UserId1",
-                        column: x => x.UserId1,
                         principalTable: "user",
                         principalColumn: "user_id",
                         onDelete: ReferentialAction.Cascade);
@@ -289,11 +283,6 @@ namespace SkillBridgeAPI.Migrations
                 name: "IX_reaction_user_id",
                 table: "reaction",
                 column: "user_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_refresh_token_UserId1",
-                table: "refresh_token",
-                column: "UserId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_sessionchat_chat_id",

@@ -15,7 +15,5 @@ namespace SkillBridgeAPI.Models
 
         [Required]
         public string Token { get; set; }
-
-        public User User { get; set; }
     }
 }

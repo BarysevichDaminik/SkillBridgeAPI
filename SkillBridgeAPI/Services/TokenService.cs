@@ -24,7 +24,7 @@ namespace SkillBridgeAPI.Services
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
                     ClaimValueTypes.Integer64),
                 new(JwtRegisteredClaimNames.Exp,
-                    DateTimeOffset.UtcNow.AddMinutes(10)
+                    DateTimeOffset.UtcNow.AddMinutes(1)
                     .ToString(),
                     ClaimValueTypes.Integer64),
                 new(JwtRegisteredClaimNames.Iss, Issuer),
@@ -47,9 +47,5 @@ namespace SkillBridgeAPI.Services
             return $"{headerAndPayload}.{signatureBase64}";
         }
         public static string CreateRefreshToken() => Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(32));
-        //public static string RefreshToken(string refreshToken)
-        //{
-
-        //}
     }
 }

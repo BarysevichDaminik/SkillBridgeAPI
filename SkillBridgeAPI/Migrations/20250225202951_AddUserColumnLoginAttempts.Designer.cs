@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SkillBridgeAPI.Models;
@@ -11,9 +12,11 @@ using SkillBridgeAPI.Models;
 namespace SkillBridgeAPI.Migrations
 {
     [DbContext(typeof(SkillbridgeContext))]
-    partial class SkillbridgeContextModelSnapshot : ModelSnapshot
+    [Migration("20250225202951_AddUserColumnLoginAttempts")]
+    partial class AddUserColumnLoginAttempts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -288,9 +291,7 @@ namespace SkillBridgeAPI.Migrations
                         .HasColumnName("last_name");
 
                     b.Property<short>("LoginAttempts")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
-                        .HasDefaultValue((short)0)
                         .HasColumnName("login_attempts");
 
                     b.Property<string>("PwdHash")

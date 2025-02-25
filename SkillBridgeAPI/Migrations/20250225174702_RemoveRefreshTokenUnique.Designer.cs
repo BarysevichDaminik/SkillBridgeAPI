@@ -12,8 +12,8 @@ using SkillBridgeAPI.Models;
 namespace SkillBridgeAPI.Migrations
 {
     [DbContext(typeof(SkillbridgeContext))]
-    [Migration("20250224130750_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20250225174702_RemoveRefreshTokenUnique")]
+    partial class RemoveRefreshTokenUnique
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -232,13 +232,8 @@ namespace SkillBridgeAPI.Migrations
                         .HasColumnType("text")
                         .HasColumnName("user_id");
 
-                    b.Property<long>("UserId1")
-                        .HasColumnType("bigint");
-
                     b.HasKey("TokenId")
                         .HasName("token_id");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("refresh_token", (string)null);
                 });
@@ -273,6 +268,8 @@ namespace SkillBridgeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("user_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("UserId"));
 
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -465,17 +462,6 @@ namespace SkillBridgeAPI.Migrations
                         .HasConstraintName("reaction_user_id_fkey");
 
                     b.Navigation("Message");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("SkillBridgeAPI.Models.RefreshToken", b =>
-                {
-                    b.HasOne("SkillBridgeAPI.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
