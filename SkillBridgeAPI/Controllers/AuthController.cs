@@ -19,48 +19,52 @@ namespace SkillBridgeAPI.Controllers
     [Route("[Controller]")]
     public class AuthController(SkillbridgeContext context) : ControllerBase
     {
-        SkillbridgeContext Context { get; } = context;
+        readonly SkillbridgeContext Context = context;
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IResult> Check([FromForm] UserCredentialsWithHash creds)
+        public async Task<IResult> CheckPwd([FromForm] UserCredentialsWithHash creds)
         {
             User? user = await Context.Users.FirstOrDefaultAsync(u => u.Username!.Equals(creds.Username));
             if (user == null) return Results.NotFound();
 
-            if(user.NextAttemptAt is not null && user.NextAttemptAt > DateTimeOffset.UtcNow)
+            if(user.LoginAttempts == 3)
             {
-                switch (user )
+                if (user.NextAttemptAt >= DateTimeOffset.UtcNow)
+                {
+                    return Results.BadRequest("You have entered incorect password for 3 times. Please wait 1 minute and then try again.");
+                }
+                else
+                {
+                    user.LoginAttempts = 0;
+                    user.NextAttemptAt = null;
+                    await Context.SaveChangesAsync();
+                }
             }
 
             bool isValid = user.PwdHash.Equals(creds.Hash, StringComparison.OrdinalIgnoreCase);
             if (!isValid)
             {
                 user.LoginAttempts++;
+                if(user.LoginAttempts == 3)
+                {
+                    user.NextAttemptAt = DateTimeOffset.UtcNow.AddMinutes(1);
+                    await Context.SaveChangesAsync();
+                    return Results.BadRequest("You have entered incorect password for 3 times. Please wait 1 minute and then try again.");
+                }
                 await Context.SaveChangesAsync();
                 return Results.Unauthorized();
             }
 
+            user.LoginAttempts = 0;
+
             var JWTtoken = TokenService.CreateJWTToken(user.Ulid);
             string newRefreshToken = TokenService.CreateRefreshToken();
 
-            RefreshToken? foundUser = await Context.RefreshToken.FirstOrDefaultAsync(r => r.UserId == user.Ulid);
-            if (foundUser is null)
-            {
-                await Context.RefreshToken.AddAsync(new RefreshToken()
-                {
-                    Token = newRefreshToken,
-                    ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
-                    UserId = user.Ulid
-                });
-                await Context.SaveChangesAsync();
-            }
-            else
-            {
-                foundUser.Token = newRefreshToken;
-                foundUser.ExpiredAt = DateTimeOffset.UtcNow.AddDays(7);
-                await Context.SaveChangesAsync();
-            }
+            RefreshToken? foundToken = await Context.RefreshToken.FirstOrDefaultAsync(r => r.UserId == user.Ulid);
+            foundToken.Token = newRefreshToken;
+            foundToken.ExpiredAt = DateTimeOffset.UtcNow.AddDays(7);
+            await Context.SaveChangesAsync();
 
             Response.Cookies.Append("jwtToken", JWTtoken, new CookieOptions
             {
@@ -100,16 +104,41 @@ namespace SkillBridgeAPI.Controllers
                 await Context.Users.AddAsync(user);
                 await Context.SaveChangesAsync();
 
-                var token = TokenService.CreateJWTToken(user.Ulid);
+                var JWTtoken = TokenService.CreateJWTToken(user.Ulid);
+                string newRefreshToken = TokenService.CreateRefreshToken();
+
+                await Context.RefreshToken.AddAsync(new RefreshToken()
+                {
+                    Token = newRefreshToken,
+                    ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
+                    UserId = user.Ulid
+                });
+                await Context.SaveChangesAsync();
+
+                Response.Cookies.Append("jwtToken", JWTtoken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
+
+                Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
 
                 return Results.Ok();
             }
             return Results.BadRequest();
         }
 
+        [AllowAnonymous]
         [HttpPost("refreshToken")]
-        public async Task<IResult> Get([FromForm] string refreshToken)
+        public async Task<IResult> Get()
         {
+            if(!Request.Cookies.TryGetValue("refreshToken", out string? refreshToken)) { return Results.BadRequest(); }
             RefreshToken? token = await Context.RefreshToken.FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiredAt > DateTimeOffset.UtcNow);
             if (token is null) return Results.Unauthorized();
             token.Token = TokenService.CreateRefreshToken();
@@ -135,10 +164,14 @@ namespace SkillBridgeAPI.Controllers
             return Results.Ok();
         }
 
+        [HttpPost("authWithToken")]
+        public IResult CheckToken() => Results.Ok();
+
         [HttpPatch("reset")]
         public async Task<IResult> Put([FromForm] string pwd)
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (subClaim == null) return Results.BadRequest();
             await Context.Users.ExecuteUpdateAsync(u =>
                 u.SetProperty(u => u.PwdHash, Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(pwd))))
                 .SetProperty(u => u.UpdatedAt, DateTime.UtcNow));
@@ -150,6 +183,7 @@ namespace SkillBridgeAPI.Controllers
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             await Context.Users.Where(u => u.Ulid == subClaim).ExecuteDeleteAsync();
+            await Context.RefreshToken.Where(r => r.UserId == subClaim).ExecuteDeleteAsync();
             return Results.Ok();
         }
     }

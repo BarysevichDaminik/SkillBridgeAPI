@@ -21,24 +21,16 @@ namespace SkillBridgeAPI.Services
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (!Request.Headers.ContainsKey("Authorization"))
-                return AuthenticateResult.Fail("Missing Authorization Header");
-
-            string authorizationHeader = Request.Headers.Authorization!;
-
-            if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                return AuthenticateResult.Fail("Invalid Authorization Scheme");
-
-            string token = authorizationHeader["Bearer ".Length..].Trim();
-
-            if (!ValidateToken(token))
+            if (!Request.Cookies.TryGetValue("jwtToken", out string? jwtToken))
             {
-                return AuthenticateResult.Fail("Invalid Token");
+                return AuthenticateResult.Fail("There is no token in cookies");
             }
+
+            if (!ValidateToken(jwtToken)) return AuthenticateResult.Fail("Invalid Token");
 
             try
             {
-                string[] parts = token.Split('.');
+                string[] parts = jwtToken.Split('.');
                 if (parts.Length != 3)
                 {
                     return AuthenticateResult.Fail("Invalid Token Structure");
@@ -68,12 +60,7 @@ namespace SkillBridgeAPI.Services
                     return AuthenticateResult.Fail("Invalid Issuer");
                 }
 
-                if (!long.TryParse(expClaim.Value, out long exp))
-                {
-                    return AuthenticateResult.Fail("Invalid exp claim format");
-                }
-
-                if (DateTimeOffset.FromUnixTimeSeconds(exp) < DateTimeOffset.UtcNow)
+                if (DateTimeOffset.Parse(expClaim.Value) < DateTimeOffset.UtcNow)
                 {
                     return AuthenticateResult.Fail("Token Expired");
                 }
@@ -93,7 +80,7 @@ namespace SkillBridgeAPI.Services
                 return AuthenticateResult.Fail($"Authentication failed: {ex.Message}");
             }
         }
-        static bool ValidateToken(string token)
+        public static bool ValidateToken(string token)
         {
             string[] parts = token.Split('.');
             if (parts.Length != 3)
