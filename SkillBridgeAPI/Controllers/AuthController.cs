@@ -26,10 +26,20 @@ namespace SkillBridgeAPI.Controllers
         public async Task<IResult> Check([FromForm] UserCredentialsWithHash creds)
         {
             User? user = await Context.Users.FirstOrDefaultAsync(u => u.Username!.Equals(creds.Username));
-            if (user == null) { return Results.NotFound(); }
+            if (user == null) return Results.NotFound();
+
+            if(user.NextAttemptAt is not null && user.NextAttemptAt > DateTimeOffset.UtcNow)
+            {
+                switch (user )
+            }
 
             bool isValid = user.PwdHash.Equals(creds.Hash, StringComparison.OrdinalIgnoreCase);
-            if (!isValid) return Results.Unauthorized();
+            if (!isValid)
+            {
+                user.LoginAttempts++;
+                await Context.SaveChangesAsync();
+                return Results.Unauthorized();
+            }
 
             var JWTtoken = TokenService.CreateJWTToken(user.Ulid);
             string newRefreshToken = TokenService.CreateRefreshToken();
@@ -100,7 +110,7 @@ namespace SkillBridgeAPI.Controllers
         [HttpPost("refreshToken")]
         public async Task<IResult> Get([FromForm] string refreshToken)
         {
-            RefreshToken? token = await Context.RefreshToken.FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiredAt > DateTimeOffset.UtcNow.ToUniversalTime());
+            RefreshToken? token = await Context.RefreshToken.FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiredAt > DateTimeOffset.UtcNow);
             if (token is null) return Results.Unauthorized();
             token.Token = TokenService.CreateRefreshToken();
             token.ExpiredAt = DateTimeOffset.UtcNow.AddDays(7);
