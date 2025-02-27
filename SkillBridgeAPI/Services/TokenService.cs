@@ -24,7 +24,7 @@ namespace SkillBridgeAPI.Services
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
                     ClaimValueTypes.Integer64),
                 new(JwtRegisteredClaimNames.Exp,
-                    DateTimeOffset.UtcNow.AddMinutes(10)
+                    DateTimeOffset.UtcNow.AddSeconds(30)
                     .ToString(),
                     ClaimValueTypes.Integer64),
                 new(JwtRegisteredClaimNames.Iss, Issuer),

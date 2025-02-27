@@ -28,6 +28,8 @@ namespace SkillBridgeAPI
                     });
             });
 
+            builder.Services.AddScoped<RefreshTokenService>();
+
             //var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
             builder.Services.AddDbContext<SkillbridgeContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 

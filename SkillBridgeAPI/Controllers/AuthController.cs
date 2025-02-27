@@ -15,15 +15,13 @@ using System.Text;
 namespace SkillBridgeAPI.Controllers
 {
     [ApiController]
-    [Authorize(AuthenticationSchemes = "JwtScheme")]
+    //[Authorize(AuthenticationSchemes = "JwtScheme")]
     [Route("[Controller]")]
-    public class AuthController(SkillbridgeContext context) : ControllerBase
+    public class AuthController(SkillbridgeContext Context, RefreshTokenService refreshTokenService) : ControllerBase
     {
-        readonly SkillbridgeContext Context = context;
-
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IResult> CheckPwd([FromForm] UserCredentialsWithHash creds)
+        public async Task<IResult> Login([FromForm] UserCredentialsWithHash creds)
         {
             User? user = await Context.Users.FirstOrDefaultAsync(u => u.Username!.Equals(creds.Username));
             if (user == null) return Results.NotFound();
@@ -55,25 +53,17 @@ namespace SkillBridgeAPI.Controllers
                 await Context.SaveChangesAsync();
                 return Results.Unauthorized();
             }
-
             user.LoginAttempts = 0;
 
-            var JWTtoken = TokenService.CreateJWTToken(user.Ulid);
-            string newRefreshToken = TokenService.CreateRefreshToken();
-
-            RefreshToken? foundToken = await Context.RefreshToken.FirstOrDefaultAsync(r => r.UserId == user.Ulid);
-            foundToken.Token = newRefreshToken;
-            foundToken.ExpiredAt = DateTimeOffset.UtcNow.AddDays(7);
-            await Context.SaveChangesAsync();
-
-            Response.Cookies.Append("jwtToken", JWTtoken, new CookieOptions
+            var tokens = await refreshTokenService.RefreshToken(UserUlid: user.Ulid);
+            Response.Cookies.Append("jwtToken", tokens[0], new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict
             });
 
-            Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
+            Response.Cookies.Append("refreshToken", tokens[1], new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
@@ -83,9 +73,9 @@ namespace SkillBridgeAPI.Controllers
             return Results.Ok();
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IResult> Post([FromBody] UserCredentialsWithPwd creds)
+        public async Task<IResult> Register([FromBody] UserCredentialsWithPwd creds)
         {
             if (creds.Username is not null && creds.Email is not null && creds.Password is not null)
             {
@@ -134,41 +124,11 @@ namespace SkillBridgeAPI.Controllers
             return Results.BadRequest();
         }
 
-        [AllowAnonymous]
-        [HttpPost("refreshToken")]
-        public async Task<IResult> Get()
-        {
-            if(!Request.Cookies.TryGetValue("refreshToken", out string? refreshToken)) { return Results.BadRequest(); }
-            RefreshToken? token = await Context.RefreshToken.FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiredAt > DateTimeOffset.UtcNow);
-            if (token is null) return Results.Unauthorized();
-            token.Token = TokenService.CreateRefreshToken();
-            token.ExpiredAt = DateTimeOffset.UtcNow.AddDays(7);
-            await Context.SaveChangesAsync();
-
-            string JWTtoken = TokenService.CreateJWTToken(token.UserId);
-
-            Response.Cookies.Append("jwtToken", JWTtoken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict
-            });
-
-            Response.Cookies.Append("refreshToken", token.Token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict
-            });
-
-            return Results.Ok();
-        }
-
         [HttpPost("authWithToken")]
         public IResult CheckToken() => Results.Ok();
 
         [HttpPatch("reset")]
-        public async Task<IResult> Put([FromForm] string pwd)
+        public async Task<IResult> ResetPWD([FromForm] string pwd)
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             if (subClaim == null) return Results.BadRequest();
@@ -179,7 +139,7 @@ namespace SkillBridgeAPI.Controllers
         }
 
         [HttpDelete("delete")]
-        public async Task<IResult> Delete()
+        public async Task<IResult> DeleteUser()
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             await Context.Users.Where(u => u.Ulid == subClaim).ExecuteDeleteAsync();
