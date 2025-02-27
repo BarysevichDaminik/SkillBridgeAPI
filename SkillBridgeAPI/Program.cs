@@ -21,7 +21,7 @@ namespace SkillBridgeAPI
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("http://localhost:3000")
+                        policy.WithOrigins("https://localhost:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();
@@ -33,7 +33,7 @@ namespace SkillBridgeAPI
             //var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
             builder.Services.AddDbContext<SkillbridgeContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddAuthentication("JwtScheme").AddScheme<JwtBearerOptions, JwtAuthenticationHandler>("JwtScheme", options => { });
+            builder.Services.AddAuthentication("JwtScheme").AddScheme<JwtBearerOptions, CookiesAuthenticationHandler>("JwtScheme", options => { });
 
             var app = builder.Build();
 

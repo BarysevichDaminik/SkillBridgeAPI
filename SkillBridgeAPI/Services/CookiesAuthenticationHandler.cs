@@ -12,11 +12,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SkillBridgeAPI.Services
 {
-    public sealed class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
+    public sealed class CookiesAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
     {
         SkillbridgeContext Context;
         RefreshTokenService refreshTokenService;
-        public JwtAuthenticationHandler(RefreshTokenService refreshTokenService, SkillbridgeContext Context, IOptionsMonitor<JwtBearerOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+        public CookiesAuthenticationHandler(RefreshTokenService refreshTokenService, SkillbridgeContext Context, IOptionsMonitor<JwtBearerOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
             : base(options, logger, encoder, clock)
         {
             this.refreshTokenService = refreshTokenService;

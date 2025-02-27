@@ -14,12 +14,10 @@ using System.Text;
 
 namespace SkillBridgeAPI.Controllers
 {
-    [ApiController]
-    //[Authorize(AuthenticationSchemes = "JwtScheme")]
+    [ApiController] 
     [Route("[Controller]")]
     public class AuthController(SkillbridgeContext Context, RefreshTokenService refreshTokenService) : ControllerBase
     {
-        //[AllowAnonymous]
         [HttpPost("login")]
         public async Task<IResult> Login([FromForm] UserCredentialsWithHash creds)
         {
@@ -73,7 +71,6 @@ namespace SkillBridgeAPI.Controllers
             return Results.Ok();
         }
 
-        //[AllowAnonymous]
         [HttpPost("register")]
         public async Task<IResult> Register([FromBody] UserCredentialsWithPwd creds)
         {
@@ -125,7 +122,8 @@ namespace SkillBridgeAPI.Controllers
         }
 
         [HttpPost("authWithToken")]
-        public IResult CheckToken() => Results.Ok();
+        public IResult CheckToken() => 
+            HttpContext.User.Identity!.IsAuthenticated ? Results.Ok() : Results.Unauthorized();
 
         [HttpPatch("reset")]
         public async Task<IResult> ResetPWD([FromForm] string pwd)
