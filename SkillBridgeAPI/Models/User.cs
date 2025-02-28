@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SkillBridgeAPI.Models;
 
@@ -25,9 +26,13 @@ public partial class User
 
     public string Ulid { get; set; } = null!;
 
-    public sbyte LoginAttempts { get; set; }
+    public byte LoginAttempts { get; set; }
 
     public DateTimeOffset? NextAttemptAt { get; set; }
+
+    public byte AvatarNumber { get; set; }
+
+    public byte Rating { get; set; }
 
     public virtual ICollection<Exchange> ExchangeUserId1Navigations { get; set; } = new List<Exchange>();
 

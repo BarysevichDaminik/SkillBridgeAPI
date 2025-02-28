@@ -84,7 +84,8 @@ namespace SkillBridgeAPI.Controllers
                     Email = creds.Email,
                     Username = creds.Username,
                     PwdHash = Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(creds.Password))),
-                    Ulid = Convert.ToHexString(Encoding.UTF8.GetBytes(Ulid.NewUlid().ToString()))
+                    Ulid = Convert.ToHexString(Encoding.UTF8.GetBytes(Ulid.NewUlid().ToString())),
+                    AvatarNumber = (byte)RandomNumberGenerator.GetInt32(1, 17)
                 };
                 if (!user.IsValid()) return Results.BadRequest();
 

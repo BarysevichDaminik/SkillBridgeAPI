@@ -202,6 +202,8 @@ public partial class SkillbridgeContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
             entity.Property(e => e.Username).HasColumnName("username");
+            entity.Property(e => e.AvatarNumber).HasColumnName("avatar_number");
+            entity.Property(e => e.Rating).HasColumnName("rating").HasDefaultValue((byte)0);
         });
 
         modelBuilder.Entity<Userskill>(entity =>
