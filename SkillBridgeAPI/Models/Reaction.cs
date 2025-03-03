@@ -7,11 +7,13 @@ public partial class Reaction
 {
     public long ReactionId { get; set; }
 
-    public long MessageId { get; set; }
+    public string MessageId { get; set; }
 
-    public long UserId { get; set; }
+    public string UserId { get; set; }
 
     public string? ReactionType { get; set; }
+
+    public string ulid { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 

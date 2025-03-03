@@ -21,5 +21,13 @@ namespace SkillBridgeAPI.Controllers
             if (avatar is 0) return Results.NotFound();
             return Results.Ok(avatar);
         }
+
+        //[HttpGet("getChatsInfo")]
+        //public async Task<IResult> GetChatsInfo()
+        //{
+        //    string? user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+        //    if (user is null) return Results.BadRequest();
+        //    int count = await Context.Exchanges.Where(e => e.UserId1 == user || e.UserId2 == user)
+        //}
     }
 }
