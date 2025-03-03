@@ -98,7 +98,7 @@ namespace SkillBridgeAPI.Controllers
                 await Context.RefreshToken.AddAsync(new RefreshToken()
                 {
                     Token = newRefreshToken,
-                    ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
+                    ExpiredAt = DateTimeOffset.UtcNow.AddDays(14),
                     UserId = user.Ulid
                 });
                 await Context.SaveChangesAsync();
