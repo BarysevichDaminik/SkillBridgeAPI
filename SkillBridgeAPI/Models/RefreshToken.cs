@@ -1,19 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace SkillBridgeAPI.Models
+namespace SkillBridgeAPI.Models;
+
+public partial class RefreshToken
 {
-    public partial class RefreshToken
-    {
-        public long TokenId { get; set; }
+    public long TokenId { get; set; }
 
-        [Required]
-        public DateTimeOffset ExpiredAt { get; set; }
+    public DateTime ExpiredAt { get; set; }
 
-        [Required]
-        public string UserId { get; set; }
+    public string UserId { get; set; } = null!;
 
-        [Required]
-        public string Token { get; set; }
-    }
+    public string Token { get; set; } = null!;
 }

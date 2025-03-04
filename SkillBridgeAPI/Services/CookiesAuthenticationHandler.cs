@@ -39,7 +39,7 @@ namespace SkillBridgeAPI.Services
                     return AuthenticateResult.Fail("There is no refreshToken in cookies");
                 }
 
-                RefreshToken? token = await Context.RefreshToken.FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiredAt > DateTimeOffset.UtcNow);
+                RefreshToken? token = await Context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiredAt > DateTimeOffset.UtcNow);
                 if (token is not null)
                 {
                     var tokens = await refreshTokenService.RefreshToken(Request);

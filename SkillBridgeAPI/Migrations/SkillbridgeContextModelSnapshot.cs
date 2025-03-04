@@ -37,7 +37,7 @@ namespace SkillBridgeAPI.Migrations
                     b.HasKey("ExchangeId", "ChatId")
                         .HasName("sessionchat_pkey");
 
-                    b.HasIndex("ChatId");
+                    b.HasIndex(new[] { "ChatId" }, "IX_sessionchat_chat_id");
 
                     b.ToTable("sessionchat", (string)null);
                 });
@@ -68,7 +68,7 @@ namespace SkillBridgeAPI.Migrations
                     b.HasKey("ChatId")
                         .HasName("chat_pkey");
 
-                    b.HasIndex("ExchangeId");
+                    b.HasIndex(new[] { "ExchangeId" }, "IX_chat_exchange_id");
 
                     b.ToTable("chat", (string)null);
                 });
@@ -86,13 +86,11 @@ namespace SkillBridgeAPI.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_date");
 
-                    b.Property<long>("SkillId1")
-                        .HasColumnType("bigint")
-                        .HasColumnName("skill_id_1");
+                    b.Property<long?>("SkillId")
+                        .HasColumnType("bigint");
 
-                    b.Property<long>("SkillId2")
-                        .HasColumnType("bigint")
-                        .HasColumnName("skill_id_2");
+                    b.Property<long?>("SkillId1")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp with time zone")
@@ -109,13 +107,13 @@ namespace SkillBridgeAPI.Migrations
                     b.HasKey("ExchangeId")
                         .HasName("exchange_pkey");
 
+                    b.HasIndex("SkillId");
+
                     b.HasIndex("SkillId1");
 
-                    b.HasIndex("SkillId2");
+                    b.HasIndex(new[] { "UserId1" }, "IX_exchange_user_id_1");
 
-                    b.HasIndex("UserId1");
-
-                    b.HasIndex("UserId2");
+                    b.HasIndex(new[] { "UserId2" }, "IX_exchange_user_id_2");
 
                     b.ToTable("exchange", (string)null);
                 });
@@ -164,9 +162,9 @@ namespace SkillBridgeAPI.Migrations
                     b.HasKey("MessageId")
                         .HasName("message_pkey");
 
-                    b.HasIndex("ChatId");
+                    b.HasIndex(new[] { "ChatId" }, "IX_message_chat_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex(new[] { "UserId" }, "IX_message_user_id");
 
                     b.ToTable("message", (string)null);
                 });
@@ -201,9 +199,9 @@ namespace SkillBridgeAPI.Migrations
                     b.HasKey("ReactionId")
                         .HasName("reaction_pkey");
 
-                    b.HasIndex("MessageId");
+                    b.HasIndex(new[] { "MessageId" }, "IX_reaction_message_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex(new[] { "UserId" }, "IX_reaction_user_id");
 
                     b.ToTable("reaction", (string)null);
                 });
@@ -216,7 +214,7 @@ namespace SkillBridgeAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("TokenId"));
 
-                    b.Property<DateTimeOffset>("ExpiredAt")
+                    b.Property<DateTime>("ExpiredAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expired_at");
 
@@ -268,8 +266,10 @@ namespace SkillBridgeAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("UserId"));
 
-                    b.Property<byte>("AvatarNumber")
+                    b.Property<short>("AvatarNumber")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
                         .HasColumnName("avatar_number");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -291,13 +291,13 @@ namespace SkillBridgeAPI.Migrations
                         .HasColumnType("text")
                         .HasColumnName("last_name");
 
-                    b.Property<byte>("LoginAttempts")
+                    b.Property<short>("LoginAttempts")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
-                        .HasDefaultValue((byte)0)
+                        .HasDefaultValue((short)0)
                         .HasColumnName("login_attempts");
 
-                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                    b.Property<DateTime?>("NextAttemptAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("next_attempt_at");
 
@@ -306,10 +306,10 @@ namespace SkillBridgeAPI.Migrations
                         .HasColumnType("text")
                         .HasColumnName("pwd_hash");
 
-                    b.Property<byte>("Rating")
+                    b.Property<short>("Rating")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("smallint")
-                        .HasDefaultValue((byte)0)
+                        .HasDefaultValue((short)0)
                         .HasColumnName("rating");
 
                     b.Property<bool?>("SubscriptionStatus")
@@ -367,9 +367,9 @@ namespace SkillBridgeAPI.Migrations
                     b.HasKey("UserSkillId")
                         .HasName("userskill_pkey");
 
-                    b.HasIndex("SkillId");
+                    b.HasIndex(new[] { "SkillId" }, "IX_userskill_skill_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex(new[] { "UserId" }, "IX_userskill_user_id");
 
                     b.ToTable("userskill", (string)null);
                 });
@@ -404,19 +404,13 @@ namespace SkillBridgeAPI.Migrations
 
             modelBuilder.Entity("SkillBridgeAPI.Models.Exchange", b =>
                 {
-                    b.HasOne("SkillBridgeAPI.Models.Skill", "SkillId1Navigation")
+                    b.HasOne("SkillBridgeAPI.Models.Skill", null)
                         .WithMany("ExchangeSkillId1Navigations")
-                        .HasForeignKey("SkillId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("exchange_skill_id_1_fkey");
+                        .HasForeignKey("SkillId");
 
-                    b.HasOne("SkillBridgeAPI.Models.Skill", "SkillId2Navigation")
+                    b.HasOne("SkillBridgeAPI.Models.Skill", null)
                         .WithMany("ExchangeSkillId2Navigations")
-                        .HasForeignKey("SkillId2")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("exchange_skill_id_2_fkey");
+                        .HasForeignKey("SkillId1");
 
                     b.HasOne("SkillBridgeAPI.Models.User", "UserId1Navigation")
                         .WithMany("ExchangeUserId1Navigations")
@@ -431,10 +425,6 @@ namespace SkillBridgeAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("exchange_user_id_2_fkey");
-
-                    b.Navigation("SkillId1Navigation");
-
-                    b.Navigation("SkillId2Navigation");
 
                     b.Navigation("UserId1Navigation");
 

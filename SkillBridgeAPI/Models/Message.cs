@@ -7,9 +7,9 @@ public partial class Message
 {
     public long MessageId { get; set; }
 
-    public string ChatId { get; set; }
+    public long ChatId { get; set; }
 
-    public string UserId { get; set; }
+    public long UserId { get; set; }
 
     public string? Message1 { get; set; }
 

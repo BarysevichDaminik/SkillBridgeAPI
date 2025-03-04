@@ -44,7 +44,7 @@ namespace SkillBridgeAPI.Controllers
                 user.LoginAttempts++;
                 if(user.LoginAttempts == 3)
                 {
-                    user.NextAttemptAt = DateTimeOffset.UtcNow.AddMinutes(1);
+                    user.NextAttemptAt = DateTime.UtcNow.AddMinutes(1);
                     await Context.SaveChangesAsync();
                     return Results.BadRequest("You have entered incorect password for 3 times. Please wait 1 minute and then try again.");
                 }
@@ -95,10 +95,10 @@ namespace SkillBridgeAPI.Controllers
                 var JWTtoken = TokenService.CreateJWTToken(user.Ulid);
                 string newRefreshToken = TokenService.CreateRefreshToken();
 
-                await Context.RefreshToken.AddAsync(new RefreshToken()
+                await Context.RefreshTokens.AddAsync(new RefreshToken()
                 {
                     Token = newRefreshToken,
-                    ExpiredAt = DateTimeOffset.UtcNow.AddDays(14),
+                    ExpiredAt = DateTime.UtcNow.AddDays(14),
                     UserId = user.Ulid
                 });
                 await Context.SaveChangesAsync();
@@ -142,7 +142,7 @@ namespace SkillBridgeAPI.Controllers
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             await Context.Users.Where(u => u.Ulid == subClaim).ExecuteDeleteAsync();
-            await Context.RefreshToken.Where(r => r.UserId == subClaim).ExecuteDeleteAsync();
+            await Context.RefreshTokens.Where(r => r.UserId == subClaim).ExecuteDeleteAsync();
             return Results.Ok();
         }
     }

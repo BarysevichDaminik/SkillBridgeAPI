@@ -7,22 +7,18 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SkillBridgeAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigrations : Migration
+    public partial class ModelsWasRefactored : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:Enum:exchange_status_enum", "pending,active,completed,cancelled,disputed")
-                .Annotation("Npgsql:Enum:user_status_enum", "active,inactive,pending,blocked");
-
             migrationBuilder.CreateTable(
                 name: "refresh_token",
                 columns: table => new
                 {
                     TokenId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    expired_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    expired_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     user_id = table.Column<string>(type: "text", nullable: false),
                     Token = table.Column<string>(type: "text", nullable: false)
                 },
@@ -59,7 +55,11 @@ namespace SkillBridgeAPI.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
                     username = table.Column<string>(type: "text", nullable: false),
                     subscription_status = table.Column<bool>(type: "boolean", nullable: true, defaultValue: false),
-                    ulid = table.Column<string>(type: "text", nullable: false)
+                    ulid = table.Column<string>(type: "text", nullable: false),
+                    login_attempts = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short)0),
+                    next_attempt_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    avatar_number = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short)0),
+                    rating = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short)0)
                 },
                 constraints: table =>
                 {
@@ -74,26 +74,24 @@ namespace SkillBridgeAPI.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     user_id_1 = table.Column<long>(type: "bigint", nullable: false),
                     user_id_2 = table.Column<long>(type: "bigint", nullable: false),
-                    skill_id_1 = table.Column<long>(type: "bigint", nullable: false),
-                    skill_id_2 = table.Column<long>(type: "bigint", nullable: false),
                     start_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    end_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    end_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    SkillId = table.Column<long>(type: "bigint", nullable: true),
+                    SkillId1 = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("exchange_pkey", x => x.exchange_id);
                     table.ForeignKey(
-                        name: "exchange_skill_id_1_fkey",
-                        column: x => x.skill_id_1,
+                        name: "FK_exchange_skill_SkillId",
+                        column: x => x.SkillId,
                         principalTable: "skill",
-                        principalColumn: "skill_id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "skill_id");
                     table.ForeignKey(
-                        name: "exchange_skill_id_2_fkey",
-                        column: x => x.skill_id_2,
+                        name: "FK_exchange_skill_SkillId1",
+                        column: x => x.SkillId1,
                         principalTable: "skill",
-                        principalColumn: "skill_id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "skill_id");
                     table.ForeignKey(
                         name: "exchange_user_id_1_fkey",
                         column: x => x.user_id_1,
@@ -245,14 +243,14 @@ namespace SkillBridgeAPI.Migrations
                 column: "exchange_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_exchange_skill_id_1",
+                name: "IX_exchange_SkillId",
                 table: "exchange",
-                column: "skill_id_1");
+                column: "SkillId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_exchange_skill_id_2",
+                name: "IX_exchange_SkillId1",
                 table: "exchange",
-                column: "skill_id_2");
+                column: "SkillId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_exchange_user_id_1",

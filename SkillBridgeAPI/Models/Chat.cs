@@ -9,7 +9,7 @@ public partial class Chat
 
     public string? ChatName { get; set; }
 
-    public string? ExchangeId { get; set; }
+    public long? ExchangeId { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 

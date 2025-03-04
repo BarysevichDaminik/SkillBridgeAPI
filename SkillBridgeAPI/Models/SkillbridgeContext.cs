@@ -23,13 +23,13 @@ public partial class SkillbridgeContext : DbContext
 
     public virtual DbSet<Reaction> Reactions { get; set; }
 
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
     public virtual DbSet<Skill> Skills { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Userskill> Userskills { get; set; }
-
-    public virtual DbSet<RefreshToken> RefreshToken { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,20 +37,13 @@ public partial class SkillbridgeContext : DbContext
             .HasPostgresEnum("exchange_status_enum", new[] { "pending", "active", "completed", "cancelled", "disputed" })
             .HasPostgresEnum("user_status_enum", new[] { "active", "inactive", "pending", "blocked" });
 
-        modelBuilder.Entity<RefreshToken>(entity => {
-            entity.HasKey(e => e.TokenId).HasName("token_id");
-
-            entity.ToTable("refresh_token");
-
-            entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
-            entity.Property(e => e.ExpiredAt).HasColumnName("expired_at").IsRequired();
-        });
-
         modelBuilder.Entity<Chat>(entity =>
         {
             entity.HasKey(e => e.ChatId).HasName("chat_pkey");
 
             entity.ToTable("chat");
+
+            entity.HasIndex(e => e.ExchangeId, "IX_chat_exchange_id");
 
             entity.Property(e => e.ChatId).HasColumnName("chat_id");
             entity.Property(e => e.ChatName).HasColumnName("chat_name");
@@ -71,21 +64,15 @@ public partial class SkillbridgeContext : DbContext
 
             entity.ToTable("exchange");
 
+            entity.HasIndex(e => e.UserId1, "IX_exchange_user_id_1");
+
+            entity.HasIndex(e => e.UserId2, "IX_exchange_user_id_2");
+
             entity.Property(e => e.ExchangeId).HasColumnName("exchange_id");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
-            entity.Property(e => e.SkillId1).HasColumnName("skill_id_1");
-            entity.Property(e => e.SkillId2).HasColumnName("skill_id_2");
             entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.UserId1).HasColumnName("user_id_1");
             entity.Property(e => e.UserId2).HasColumnName("user_id_2");
-
-            entity.HasOne(d => d.SkillId1Navigation).WithMany(p => p.ExchangeSkillId1Navigations)
-                .HasForeignKey(d => d.SkillId1)
-                .HasConstraintName("exchange_skill_id_1_fkey");
-
-            entity.HasOne(d => d.SkillId2Navigation).WithMany(p => p.ExchangeSkillId2Navigations)
-                .HasForeignKey(d => d.SkillId2)
-                .HasConstraintName("exchange_skill_id_2_fkey");
 
             entity.HasOne(d => d.UserId1Navigation).WithMany(p => p.ExchangeUserId1Navigations)
                 .HasForeignKey(d => d.UserId1)
@@ -108,6 +95,7 @@ public partial class SkillbridgeContext : DbContext
                     {
                         j.HasKey("ExchangeId", "ChatId").HasName("sessionchat_pkey");
                         j.ToTable("sessionchat");
+                        j.HasIndex(new[] { "ChatId" }, "IX_sessionchat_chat_id");
                         j.IndexerProperty<long>("ExchangeId").HasColumnName("exchange_id");
                         j.IndexerProperty<long>("ChatId").HasColumnName("chat_id");
                     });
@@ -118,6 +106,10 @@ public partial class SkillbridgeContext : DbContext
             entity.HasKey(e => e.MessageId).HasName("message_pkey");
 
             entity.ToTable("message");
+
+            entity.HasIndex(e => e.ChatId, "IX_message_chat_id");
+
+            entity.HasIndex(e => e.UserId, "IX_message_user_id");
 
             entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.ChatId).HasColumnName("chat_id");
@@ -147,6 +139,10 @@ public partial class SkillbridgeContext : DbContext
 
             entity.ToTable("reaction");
 
+            entity.HasIndex(e => e.MessageId, "IX_reaction_message_id");
+
+            entity.HasIndex(e => e.UserId, "IX_reaction_user_id");
+
             entity.Property(e => e.ReactionId).HasColumnName("reaction_id");
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -162,6 +158,16 @@ public partial class SkillbridgeContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Reactions)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("reaction_user_id_fkey");
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.TokenId).HasName("token_id");
+
+            entity.ToTable("refresh_token");
+
+            entity.Property(e => e.ExpiredAt).HasColumnName("expired_at");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
         });
 
         modelBuilder.Entity<Skill>(entity =>
@@ -183,17 +189,24 @@ public partial class SkillbridgeContext : DbContext
 
             entity.HasIndex(e => e.Email, "User_email_key").IsUnique();
 
-            entity.Property(e => e.UserId)
-                .HasColumnName("user_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AvatarNumber)
+                .HasDefaultValue((short)0)
+                .HasColumnName("avatar_number");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.FirstName).HasColumnName("first_name");
             entity.Property(e => e.LastName).HasColumnName("last_name");
-            entity.Property(e => e.PwdHash).HasColumnName("pwd_hash");
-            entity.Property(e => e.LoginAttempts).HasColumnName("login_attempts").HasDefaultValue(0);
+            entity.Property(e => e.LoginAttempts)
+                .HasDefaultValue((short)0)
+                .HasColumnName("login_attempts");
             entity.Property(e => e.NextAttemptAt).HasColumnName("next_attempt_at");
+            entity.Property(e => e.PwdHash).HasColumnName("pwd_hash");
+            entity.Property(e => e.Rating)
+                .HasDefaultValue((short)0)
+                .HasColumnName("rating");
             entity.Property(e => e.SubscriptionStatus)
                 .HasDefaultValue(false)
                 .HasColumnName("subscription_status");
@@ -202,8 +215,6 @@ public partial class SkillbridgeContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
             entity.Property(e => e.Username).HasColumnName("username");
-            entity.Property(e => e.AvatarNumber).HasColumnName("avatar_number");
-            entity.Property(e => e.Rating).HasColumnName("rating").HasDefaultValue((byte)0);
         });
 
         modelBuilder.Entity<Userskill>(entity =>
@@ -211,6 +222,10 @@ public partial class SkillbridgeContext : DbContext
             entity.HasKey(e => e.UserSkillId).HasName("userskill_pkey");
 
             entity.ToTable("userskill");
+
+            entity.HasIndex(e => e.SkillId, "IX_userskill_skill_id");
+
+            entity.HasIndex(e => e.UserId, "IX_userskill_user_id");
 
             entity.Property(e => e.UserSkillId).HasColumnName("user_skill_id");
             entity.Property(e => e.SkillId).HasColumnName("skill_id");
