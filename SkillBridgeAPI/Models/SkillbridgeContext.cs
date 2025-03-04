@@ -31,12 +31,12 @@ public partial class SkillbridgeContext : DbContext
 
     public virtual DbSet<Userskill> Userskills { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=skillbridge;Username=postgres;Password=9435");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .HasPostgresEnum("exchange_status_enum", new[] { "pending", "active", "completed", "cancelled", "disputed" })
-            .HasPostgresEnum("user_status_enum", new[] { "active", "inactive", "pending", "blocked" });
-
         modelBuilder.Entity<Chat>(entity =>
         {
             entity.HasKey(e => e.ChatId).HasName("chat_pkey");
@@ -117,7 +117,7 @@ public partial class SkillbridgeContext : DbContext
             entity.Property(e => e.IsRead)
                 .HasDefaultValue(false)
                 .HasColumnName("is_read");
-            entity.Property(e => e.Message1).HasColumnName("message");
+            entity.Property(e => e.message).HasColumnName("message");
             entity.Property(e => e.MessageType).HasColumnName("message_type");
             entity.Property(e => e.SentDate)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")

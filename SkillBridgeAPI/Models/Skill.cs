@@ -11,9 +11,5 @@ public partial class Skill
 
     public string? Category { get; set; }
 
-    public virtual ICollection<Exchange> ExchangeSkillId1Navigations { get; set; } = new List<Exchange>();
-
-    public virtual ICollection<Exchange> ExchangeSkillId2Navigations { get; set; } = new List<Exchange>();
-
     public virtual ICollection<Userskill> Userskills { get; set; } = new List<Userskill>();
 }

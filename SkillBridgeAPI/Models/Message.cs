@@ -11,7 +11,7 @@ public partial class Message
 
     public long UserId { get; set; }
 
-    public string? Message1 { get; set; }
+    public string? message { get; set; }
 
     public DateTime? SentDate { get; set; }
 

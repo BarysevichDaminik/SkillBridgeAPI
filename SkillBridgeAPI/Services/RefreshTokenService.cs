@@ -25,7 +25,7 @@ namespace SkillBridgeAPI.Services
 
             string jwtToken = TokenService.CreateJWTToken(token.UserId);
 
-            return [ jwtToken, token.Token ];
+            return [jwtToken, token.Token];
         }
     }
 }
