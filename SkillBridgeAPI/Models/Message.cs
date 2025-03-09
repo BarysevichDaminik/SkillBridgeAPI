@@ -23,7 +23,7 @@ public partial class Message
 
     public virtual Chat Chat { get; set; } = null!;
 
-    public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+    public virtual ICollection<Reaction> Reactions { get; set; } = [];
 
     public virtual User User { get; set; } = null!;
 }

@@ -14,8 +14,8 @@ namespace SkillBridgeAPI.Services
 {
     public sealed class CookiesAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
     {
-        SkillbridgeContext Context;
-        RefreshTokenService refreshTokenService;
+        readonly SkillbridgeContext Context;
+        readonly RefreshTokenService refreshTokenService;
         public CookiesAuthenticationHandler(RefreshTokenService refreshTokenService, SkillbridgeContext Context, IOptionsMonitor<JwtBearerOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
             : base(options, logger, encoder, clock)
         {
@@ -74,7 +74,7 @@ namespace SkillBridgeAPI.Services
                     return AuthenticateResult.Fail("Invalid Payload");
                 }
 
-                List<Claim> claims = anonymousClaims.Select(c => new Claim(c["Type"].ToString()!, c["Value"].ToString()!, c["ValueType"].ToString(), c["Issuer"].ToString(), c["OriginalIssuer"].ToString())).ToList();
+                List<Claim> claims = anonymousClaims.ConvertAll(c => new Claim(c["Type"].ToString()!, c["Value"].ToString()!, c["ValueType"].ToString(), c["Issuer"].ToString(), c["OriginalIssuer"].ToString()));
 
                 var identity = new ClaimsIdentity(claims, Scheme.Name);
                 var principal = new ClaimsPrincipal(identity);
@@ -122,7 +122,7 @@ namespace SkillBridgeAPI.Services
                     return false;
                 }
 
-                List<Claim> claims = anonymousClaims.Select(c => new Claim(c["Type"].ToString()!, c["Value"].ToString()!, c["ValueType"].ToString(), c["Issuer"].ToString(), c["OriginalIssuer"].ToString())).ToList();
+                List<Claim> claims = anonymousClaims.ConvertAll(c => new Claim(c["Type"].ToString()!, c["Value"].ToString()!, c["ValueType"].ToString(), c["Issuer"].ToString(), c["OriginalIssuer"].ToString()));
 
                 var expClaim = claims.FirstOrDefault(c => c.Type == "exp");
                 var issClaim = claims.FirstOrDefault(c => c.Type == "iss");

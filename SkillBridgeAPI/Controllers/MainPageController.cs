@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
+using SkillBridgeAPI.DTOs;
 using SkillBridgeAPI.Models;
 using System;
 
@@ -9,6 +11,8 @@ namespace SkillBridgeAPI.Controllers
     [Route("[controller]")]
     public class MainPageController(SkillbridgeContext Context) : ControllerBase
     {
+        static readonly string[] msgTypes = ["text", "image", "file"];
+
         [HttpGet("getAvatar")]
         public async Task<IResult> GetAvatar()
         {
@@ -29,8 +33,25 @@ namespace SkillBridgeAPI.Controllers
             if (user is null) return Results.BadRequest();
             long? userID = (await Context.Users.FirstOrDefaultAsync(u => u.Ulid == user))?.UserId;
             if (userID is null) return Results.NotFound();
-            var count = await Context.Chats.Where(c => c.Exchange!.UserId1 == userID || c.Exchange.UserId2 == userID).CountAsync();
-            return Results.Ok(count);
+
+            var chats = await Context.Chats
+                .Where(c => c.Exchange!.UserId1 == userID || c.Exchange.UserId2 == userID)
+                .Select(c => new {
+                    c.ChatName,
+                    c.CreatedDate,
+                    User1 = c.Exchange!.UserId1Navigation.Username,
+                    User2 = c.Exchange!.UserId2Navigation.Username,
+                    MySkill = Context.Skills.First(
+                        s => s.SkillId == Context.Userskills.First(
+                            u => u.UserSkillId == c.Exchange!.UserId1).SkillId).SkillName,
+                    opponentSkill = Context.Skills.First(
+                        s => s.SkillId == Context.Userskills.First(
+                            u => u.UserSkillId == c.Exchange!.UserId2).SkillId).SkillName,
+                    user2Avatar = c.Exchange!.UserId2Navigation.AvatarNumber
+                })
+                .ToListAsync();
+
+            return Results.Ok(chats);
         }
 
         [HttpPost("establishExchange")]
@@ -88,7 +109,7 @@ namespace SkillBridgeAPI.Controllers
         }
 
         [HttpPost("addChat")]
-        public async Task<IResult> AddChat([FromForm] long exchangeId, [FromForm] string name)
+        public async Task<IResult> AddChat([FromForm] ChatInfo chatInfo)
         {
             string? user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             if (user is null) return Results.BadRequest();
@@ -96,18 +117,18 @@ namespace SkillBridgeAPI.Controllers
             if (userID is null) return Results.NotFound();
 
             if (!User.Identity!.IsAuthenticated) return Results.Unauthorized();
-            if(exchangeId is 0 || name is null) return Results.BadRequest();
+            if(chatInfo.exchangeId is 0 || chatInfo.name is null) return Results.BadRequest();
 
-            if (!(await Context.Exchanges.AnyAsync(e => e.ExchangeId == exchangeId))) return Results.NotFound();
+            if (!(await Context.Exchanges.AnyAsync(e => e.ExchangeId == chatInfo.exchangeId))) return Results.NotFound();
 
             if (!(await Context.Exchanges
                 .Where(e => e.UserId1 == userID || e.UserId2 == userID)
-                .AnyAsync(e => e.ExchangeId == exchangeId))) return Results.BadRequest();
+                .AnyAsync(e => e.ExchangeId == chatInfo.exchangeId))) { return Results.BadRequest(); }
 
             Chat chat = new()
             {
-                ExchangeId = exchangeId,
-                ChatName = name,
+                ExchangeId = chatInfo.exchangeId,
+                ChatName = chatInfo.name,
                 CreatedDate = DateTime.UtcNow,
             };
             try
@@ -123,22 +144,29 @@ namespace SkillBridgeAPI.Controllers
         }
 
         [HttpPost("regMsg")]
-        public async Task<IResult> regMsg([FromForm] long chatId, [FromForm] string text)
+        public async Task<IResult> RegMsg([FromForm] MsgInfo msgInfo)
         {
             string? user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             if (user is null) return Results.BadRequest();
             long? userID = (await Context.Users.FirstOrDefaultAsync(u => u.Ulid == user))?.UserId;
             if (userID is null) return Results.NotFound();
-            Chat? chat = await Context.Chats.FirstOrDefaultAsync(c => c.ChatId == chatId);
-            if(chat is null) return Results.NotFound();
+            Chat? chat = await Context.Chats.FirstOrDefaultAsync(c => c.ChatId == msgInfo.chatId);
+            if (chat is null) return Results.NotFound();
             if (chat.Exchange!.UserId1 != userID && chat.Exchange!.UserId2 != userID) return Results.BadRequest();
+            if (!msgTypes.Contains(msgInfo.msgType)) return Results.BadRequest();
 
             Message message = new()
             {
                 ChatId = chat.ChatId,
-                UserId = userID,
-                message = text
+                UserId = (long)userID,
+                message = msgInfo.text,
+                SentDate = DateTime.UtcNow,
+                MessageType = msgInfo.msgType,
+                IsRead = false
             };
+
+            await Context.Messages.AddAsync(message);
+            await Context.SaveChangesAsync();
 
             return Results.Created();
         }
