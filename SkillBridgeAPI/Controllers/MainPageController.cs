@@ -54,6 +54,29 @@ namespace SkillBridgeAPI.Controllers
             return Results.Ok(chats);
         }
 
+        [HttpGet("getExchangesInfo")]
+        public async Task<IResult> GetExchangesInfo()
+        {
+            string? user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (user is null) return Results.BadRequest();
+            long? userID = (await Context.Users.FirstOrDefaultAsync(u => u.Ulid == user))?.UserId;
+            if (userID is null) return Results.NotFound();
+
+            var chats = await Context.Exchanges
+                .Where(e => e.UserId1 == userID || e.UserId2 == userID)
+                .Select(e => new {
+                    User1 = e.UserId1Navigation.Username,
+                    User2 = e.UserId2Navigation.Username,
+                    IsActive = e.EndDate == null,
+                    e.StartDate,
+                    chats = e.Chats.Count,
+                    user2Avatar = e.UserId2Navigation.AvatarNumber
+                })
+                .ToListAsync();
+
+            return Results.Ok(chats);
+        }
+
         [HttpPost("establishExchange")]
         public async Task<IResult> AddExchange([FromForm] long SecondUser)
         {
