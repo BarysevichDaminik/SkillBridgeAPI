@@ -5,6 +5,10 @@ VisualStudioVersion = 17.12.35728.132
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkillBridgeAPI", "SkillBridgeAPI\SkillBridgeAPI.csproj", "{284F6B4C-6227-49F4-8C7D-F3726054F2D2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkillBridgeChat", "SkillBridgeChat\SkillBridgeChat.csproj", "{4B9D6540-11CB-4EB1-B2C3-8B6B4A640A8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkillBridgeClient", "SkillBridgeClient\SkillBridgeClient.csproj", "{5D4FDD94-4F14-4FC9-AB85-A1B3C5A855FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{284F6B4C-6227-49F4-8C7D-F3726054F2D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{284F6B4C-6227-49F4-8C7D-F3726054F2D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{284F6B4C-6227-49F4-8C7D-F3726054F2D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B9D6540-11CB-4EB1-B2C3-8B6B4A640A8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B9D6540-11CB-4EB1-B2C3-8B6B4A640A8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B9D6540-11CB-4EB1-B2C3-8B6B4A640A8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B9D6540-11CB-4EB1-B2C3-8B6B4A640A8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D4FDD94-4F14-4FC9-AB85-A1B3C5A855FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D4FDD94-4F14-4FC9-AB85-A1B3C5A855FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D4FDD94-4F14-4FC9-AB85-A1B3C5A855FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D4FDD94-4F14-4FC9-AB85-A1B3C5A855FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
