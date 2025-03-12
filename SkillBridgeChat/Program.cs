@@ -8,14 +8,25 @@ namespace SkillBridgeChat
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddSignalR();
 
             builder.Services.AddControllers();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend",
+                    policy =>
+                    {
+                        policy.WithOrigins("https://localhost:3000")
+                               .AllowAnyMethod()
+                               .AllowAnyHeader()
+                               .AllowCredentials();
+                    });
+            });
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            app.UseCors("AllowFrontend");
 
             app.UseHttpsRedirection();
 
