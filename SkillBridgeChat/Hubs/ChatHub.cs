@@ -17,15 +17,15 @@ namespace SkillBridgeChat.Hubs
         {
             await Clients.All.SendMessage(message);
         }
-        public override async Task OnConnectedAsync()
-        {
-            var userId = (Context.GetHttpContext())?.Request.Query["userId"];
-            if (!string.IsNullOrEmpty(userId))
-            {
-                await DBContext.Users.Where(u => u.UserId == userId).ExecuteUpdateAsync(prop => prop.SetProperty(p => p.Signalrconnectionid, Context.ConnectionId));
-            }
+        //public override async Task OnConnectedAsync()
+        //{
+        //    var userId = (Context.GetHttpContext())?.Request.Query["userId"];
+        //    if (!string.IsNullOrEmpty(userId))
+        //    {
+        //        await DBContext.Users.Where(u => u.UserId == userId).ExecuteUpdateAsync(prop => prop.SetProperty(p => p.Signalrconnectionid, Context.ConnectionId));
+        //    }
 
-            await base.OnConnectedAsync();
-        }
+        //    await base.OnConnectedAsync();
+        //}
     }
 }

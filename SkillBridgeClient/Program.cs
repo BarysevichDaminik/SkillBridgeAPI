@@ -2,7 +2,7 @@
 
 namespace SkillBridgeClient
 {
-    internal class Program
+    internal static class Program
     {
         static async Task Main(string[] args)
         {

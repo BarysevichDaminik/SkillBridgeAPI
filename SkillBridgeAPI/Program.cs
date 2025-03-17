@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using SkillBridgeAPI.Models;
 using SkillBridgeAPI.Services;
+using System.Net;
 
 namespace SkillBridgeAPI
 {
@@ -16,12 +17,18 @@ namespace SkillBridgeAPI
 
             builder.Services.AddControllers();
 
+            var hostName = Dns.GetHostName();
+            var hostEntry = Dns.GetHostEntry(hostName);
+            string localIpAddress = hostEntry.AddressList[4].ToString();
+
+            localIpAddress ??= "localhost";
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("https://192.168.166.233:3000")
+                        policy.WithOrigins($"https://{localIpAddress}:3000", "https://localhost:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();

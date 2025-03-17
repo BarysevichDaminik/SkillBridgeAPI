@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using SkillBridgeChat.Hubs;
 using SkillBridgeChat.Models;
+using System.Diagnostics;
+using System.Net;
 
 namespace SkillBridgeChat
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -14,12 +16,19 @@ namespace SkillBridgeChat
 
             builder.Services.AddControllers();
 
+            var hostName = Dns.GetHostName();
+            var hostEntry = Dns.GetHostEntry(hostName);
+            string localIpAddress = hostEntry.AddressList[4].ToString();
+
+            localIpAddress ??= "localhost";
+
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("https://192.168.166.233:3000")
+                        policy.WithOrigins($"https://{localIpAddress}:3000", "https://localhost:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();
