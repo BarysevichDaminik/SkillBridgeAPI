@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace SkillBridgeChat.Models;
+
+public partial class Chat
+{
+    public long ChatId { get; set; }
+
+    public string? ChatName { get; set; }
+
+    public long? ExchangeId { get; set; }
+
+    public DateTime? CreatedDate { get; set; }
+
+    public virtual Exchange? Exchange { get; set; }
+
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+}

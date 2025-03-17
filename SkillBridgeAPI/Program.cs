@@ -21,11 +21,19 @@ namespace SkillBridgeAPI
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("https://localhost:3000")
+                        policy.WithOrigins("https://192.168.166.233:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();
                     });
+            });
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(7186, listenOptions =>
+                {
+                    listenOptions.UseHttps("certificate.pfx");
+                });
             });
 
             builder.Services.AddScoped<RefreshTokenService>();

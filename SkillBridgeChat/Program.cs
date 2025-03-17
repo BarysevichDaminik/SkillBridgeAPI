@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using SkillBridgeChat.Hubs;
+using SkillBridgeChat.Models;
 
 namespace SkillBridgeChat
 {
@@ -17,12 +19,22 @@ namespace SkillBridgeChat
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("https://localhost:3000")
+                        policy.WithOrigins("https://192.168.166.233:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();
                     });
             });
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(7215, listenOptions =>
+                {
+                    listenOptions.UseHttps("../SkillBridgeAPI/certificate.pfx");
+                });
+            });
+
+            builder.Services.AddDbContext<SkillbridgeContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 

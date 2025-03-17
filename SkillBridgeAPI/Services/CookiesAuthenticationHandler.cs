@@ -47,14 +47,14 @@ namespace SkillBridgeAPI.Services
                     {
                         HttpOnly = true,
                         Secure = true,
-                        SameSite = SameSiteMode.Strict
+                        //SameSite = SameSiteMode.Strict
                     });
 
                     Response.Cookies.Append("refreshToken", tokens[1], new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
-                        SameSite = SameSiteMode.Strict
+                        //SameSite = SameSiteMode.Strict
                     });
                 }
                 else
