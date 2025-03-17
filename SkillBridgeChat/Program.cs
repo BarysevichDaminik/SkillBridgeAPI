@@ -3,6 +3,7 @@ using SkillBridgeChat.Hubs;
 using SkillBridgeChat.Models;
 using System.Diagnostics;
 using System.Net;
+using System.Net.NetworkInformation;
 
 namespace SkillBridgeChat
 {
@@ -16,19 +17,14 @@ namespace SkillBridgeChat
 
             builder.Services.AddControllers();
 
-            var hostName = Dns.GetHostName();
-            var hostEntry = Dns.GetHostEntry(hostName);
-            string localIpAddress = hostEntry.AddressList[4].ToString();
-
-            localIpAddress ??= "localhost";
-
+            string? localIpAddress = GetIPAddressForAlias("Wi-FI") ?? "localhost";
 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins($"https://{localIpAddress}:3000", "https://localhost:3000")
+                        policy.WithOrigins($"https://{localIpAddress}:3000", "https://localhost:3000", "https://192.168.31.212:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();
@@ -58,6 +54,25 @@ namespace SkillBridgeChat
             app.MapHub<ChatHub>("/myhub");
 
             app.Run();
+        }
+        static string? GetIPAddressForAlias(string alias)
+        {
+            foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (networkInterface.Name.Equals(alias, StringComparison.OrdinalIgnoreCase) &&
+                    networkInterface.OperationalStatus == OperationalStatus.Up)
+                {
+                    var ipProperties = networkInterface.GetIPProperties();
+                    foreach (var unicastAddress in ipProperties.UnicastAddresses)
+                    {
+                        if (unicastAddress.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {
+                            return unicastAddress.Address.ToString();
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }
