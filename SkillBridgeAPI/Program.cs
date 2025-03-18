@@ -24,7 +24,7 @@ namespace SkillBridgeAPI
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins($"https://{localIpAddress}:3000", "https://localhost:3000", "https://192.168.31.212:3000")
+                        policy.WithOrigins($"https://{localIpAddress}:3000", "https://localhost:3000")
                                .AllowAnyMethod()
                                .AllowAnyHeader()
                                .AllowCredentials();
