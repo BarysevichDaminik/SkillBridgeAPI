@@ -2,6 +2,6 @@
 {
     public interface IMessageHub
     {
-        Task SendMessage(string message);
+        Task SendMessage(string username, string message);
     }
 }

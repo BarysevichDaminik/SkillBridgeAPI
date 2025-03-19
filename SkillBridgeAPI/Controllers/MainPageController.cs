@@ -1,15 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using SkillBridgeAPI.DTOs;
 using SkillBridgeAPI.Models;
-using System;
 
 namespace SkillBridgeAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class MainPageController(SkillbridgeContext Context) : ControllerBase
+    public class MainPageController(SkillbridgeContext Context, ILogger<MainPageController> logger) : ControllerBase
     {
         static readonly string[] msgTypes = ["text", "image", "file"];
 
@@ -36,7 +34,8 @@ namespace SkillBridgeAPI.Controllers
 
             var chats = await Context.Chats
                 .Where(c => c.Exchange!.UserId1 == userID || c.Exchange.UserId2 == userID)
-                .Select(c => new {
+                .Select(c => new
+                {
                     c.ChatName,
                     c.CreatedDate,
                     User1 = c.Exchange!.UserId1Navigation.Username,
@@ -64,7 +63,8 @@ namespace SkillBridgeAPI.Controllers
 
             var chats = await Context.Exchanges
                 .Where(e => e.UserId1 == userID || e.UserId2 == userID)
-                .Select(e => new {
+                .Select(e => new
+                {
                     User1 = e.UserId1Navigation.Username,
                     User2 = e.UserId2Navigation.Username,
                     IsActive = e.EndDate == null,
@@ -140,7 +140,7 @@ namespace SkillBridgeAPI.Controllers
             if (userID is null) return Results.NotFound();
 
             if (!User.Identity!.IsAuthenticated) return Results.Unauthorized();
-            if(chatInfo.exchangeId is 0 || chatInfo.name is null) return Results.BadRequest();
+            if (chatInfo.exchangeId is 0 || chatInfo.name is null) return Results.BadRequest();
 
             if (!(await Context.Exchanges.AnyAsync(e => e.ExchangeId == chatInfo.exchangeId))) return Results.NotFound();
 
@@ -192,6 +192,30 @@ namespace SkillBridgeAPI.Controllers
             await Context.SaveChangesAsync();
 
             return Results.Created();
+        }
+
+        [HttpGet("msgs")]
+        public async Task<IResult> Msgs([FromQuery] string chatName)
+        {
+            string? user = "undefined";
+            try
+            {
+                if (string.IsNullOrWhiteSpace(chatName)) return Results.BadRequest();
+                if (!User.Identity!.IsAuthenticated) return Results.Unauthorized();
+                user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+                long? chatId = (await Context.Chats.FirstOrDefaultAsync(u => u.ChatName == chatName))?.ChatId;
+                if (chatId is null || user is null) return Results.BadRequest();
+                List<Message> messages = await Context.Messages
+                    .AsNoTracking()
+                    .Where(m => m.ChatId == chatId)
+                    .ToListAsync();
+                return Results.Ok(messages);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error occurred in 'Msgs' endpoint. ChatName: {ChatName}, User: {User}", chatName, user);
+                return Results.InternalServerError();
+            }
         }
     }
 }

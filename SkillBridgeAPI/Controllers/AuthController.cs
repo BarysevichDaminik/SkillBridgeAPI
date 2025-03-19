@@ -123,8 +123,8 @@ namespace SkillBridgeAPI.Controllers
         }
 
         [HttpPost("authWithToken")]
-        public IResult CheckToken() => 
-            HttpContext.User.Identity!.IsAuthenticated ? Results.Ok() : Results.Unauthorized();
+        public IResult CheckToken() =>
+            HttpContext.User.Identity!.IsAuthenticated ? Results.Ok(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value) : Results.Unauthorized();
 
         [HttpPatch("reset")]
         public async Task<IResult> ResetPWD([FromForm] string pwd)

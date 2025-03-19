@@ -15,13 +15,16 @@ namespace SkillBridgeChat.Hubs
         }
         public async Task SendMessage(string chatName, string username, string message)
         {
-            long? userId = (await DBContext.Users.FirstOrDefaultAsync(u => u.Username == username))?.UserId;
+            if (username is not null) username = username.Replace("\"", String.Empty);
+            User? user = await DBContext.Users.FirstOrDefaultAsync(u => u.Ulid == username);
+            long? userId = user?.UserId;
             long? chatId = (await DBContext.Chats.FirstOrDefaultAsync(u => u.ChatName == chatName))?.ChatId;
             if (userId == null || chatId == null) return;
 
             if (messages.TryGetValue(chatName, out List<Message>? value) && value.Count >= 30)
             {
                 await DBContext.Messages.AddRangeAsync(value);
+                await DBContext.SaveChangesAsync();
                 value = [];
             }
             else if(value is null)
@@ -38,7 +41,7 @@ namespace SkillBridgeChat.Hubs
                 MessageType = "text",
                 IsRead = false
             });
-            await Clients.All.SendMessage(message);
+            await Clients.All.SendMessage(user!.Username, message);
         }
         public async override Task OnDisconnectedAsync(Exception? exception)
         {
