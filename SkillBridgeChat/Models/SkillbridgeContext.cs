@@ -104,6 +104,7 @@ public partial class SkillbridgeContext : DbContext
             entity.Property(e => e.SentDate)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("sent_date");
+            entity.Property(e => e.Ulid).HasColumnName("ulid");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Chat).WithMany(p => p.Messages)

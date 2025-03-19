@@ -21,6 +21,8 @@ public partial class Message
 
     public bool? IsRead { get; set; }
 
+    public string Ulid { get; set; } = null!;
+
     public virtual Chat Chat { get; set; } = null!;
 
     public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();

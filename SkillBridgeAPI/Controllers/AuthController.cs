@@ -11,6 +11,7 @@ using System.Numerics;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 
 namespace SkillBridgeAPI.Controllers
 {
@@ -68,7 +69,7 @@ namespace SkillBridgeAPI.Controllers
                 SameSite = SameSiteMode.None
             });
 
-            return Results.Ok();
+            return Results.Ok(user.UserId);
         }
 
         [HttpPost("register")]
@@ -123,8 +124,15 @@ namespace SkillBridgeAPI.Controllers
         }
 
         [HttpPost("authWithToken")]
-        public IResult CheckToken() =>
-            HttpContext.User.Identity!.IsAuthenticated ? Results.Ok(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value) : Results.Unauthorized();
+        public async Task<IResult> CheckToken()
+        {
+            string? ulid = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (string.IsNullOrEmpty(ulid)) return Results.BadRequest();
+            string? username = (await Context.Users.FirstOrDefaultAsync(u => u.Ulid == ulid))?.Username;
+            if (string.IsNullOrEmpty(username)) return Results.BadRequest();
+            var result = new { id = ulid, name = username};
+            return HttpContext.User.Identity!.IsAuthenticated ? Results.Ok(result) : Results.Unauthorized();
+        }
 
         [HttpPatch("reset")]
         public async Task<IResult> ResetPWD([FromForm] string pwd)

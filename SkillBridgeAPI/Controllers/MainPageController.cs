@@ -205,10 +205,16 @@ namespace SkillBridgeAPI.Controllers
                 user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
                 long? chatId = (await Context.Chats.FirstOrDefaultAsync(u => u.ChatName == chatName))?.ChatId;
                 if (chatId is null || user is null) return Results.BadRequest();
-                List<Message> messages = await Context.Messages
+                var messages = Context.Messages
                     .AsNoTracking()
                     .Where(m => m.ChatId == chatId)
-                    .ToListAsync();
+                    .Select(m => new
+                    {
+                        user = m.User.Username,
+                        m.message,
+                        date = m.SentDate,
+                        chatName
+                    });
                 return Results.Ok(messages);
             }
             catch (Exception ex)
