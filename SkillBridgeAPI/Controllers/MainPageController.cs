@@ -38,6 +38,7 @@ namespace SkillBridgeAPI.Controllers
                 {
                     c.ChatName,
                     c.CreatedDate,
+                    c.ChatId,
                     User1 = c.Exchange!.UserId1Navigation.Username,
                     User2 = c.Exchange!.UserId2Navigation.Username,
                     MySkill = Context.Skills.First(
@@ -166,45 +167,17 @@ namespace SkillBridgeAPI.Controllers
             return Results.Created();
         }
 
-        [HttpPost("regMsg")]
-        public async Task<IResult> RegMsg([FromForm] MsgInfo msgInfo)
-        {
-            string? user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            if (user is null) return Results.BadRequest();
-            long? userID = (await Context.Users.FirstOrDefaultAsync(u => u.Ulid == user))?.UserId;
-            if (userID is null) return Results.NotFound();
-            Chat? chat = await Context.Chats.FirstOrDefaultAsync(c => c.ChatId == msgInfo.chatId);
-            if (chat is null) return Results.NotFound();
-            if (chat.Exchange!.UserId1 != userID && chat.Exchange!.UserId2 != userID) return Results.BadRequest();
-            if (!msgTypes.Contains(msgInfo.msgType)) return Results.BadRequest();
-
-            Message message = new()
-            {
-                ChatId = chat.ChatId,
-                UserId = (long)userID,
-                message = msgInfo.text,
-                SentDate = DateTime.UtcNow,
-                MessageType = msgInfo.msgType,
-                IsRead = false
-            };
-
-            await Context.Messages.AddAsync(message);
-            await Context.SaveChangesAsync();
-
-            return Results.Created();
-        }
-
         [HttpGet("msgs")]
-        public async Task<IResult> Msgs([FromQuery] string chatName)
+        public async Task<IResult> Msgs([FromQuery] long chatId)
         {
             string? user = "undefined";
             try
             {
-                if (string.IsNullOrWhiteSpace(chatName)) return Results.BadRequest();
                 if (!User.Identity!.IsAuthenticated) return Results.Unauthorized();
                 user = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-                long? chatId = (await Context.Chats.FirstOrDefaultAsync(u => u.ChatName == chatName))?.ChatId;
-                if (chatId is null || user is null) return Results.BadRequest();
+                bool chat = await Context.Chats.AsNoTracking().AnyAsync(c => c.ChatId == chatId);
+                if (chat is false || user is null) return Results.BadRequest();
+
                 var messages = Context.Messages
                     .AsNoTracking()
                     .Where(m => m.ChatId == chatId)
@@ -213,13 +186,14 @@ namespace SkillBridgeAPI.Controllers
                         user = m.User.Username,
                         m.message,
                         date = m.SentDate,
-                        chatName
+                        chatId
                     });
+
                 return Results.Ok(messages);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error occurred in 'Msgs' endpoint. ChatName: {ChatName}, User: {User}", chatName, user);
+                logger.LogError(ex, "Error occurred in 'Msgs' endpoint. ChatName: {ChatName}, User: {User}", chatId, user);
                 return Results.InternalServerError();
             }
         }

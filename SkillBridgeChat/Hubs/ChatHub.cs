@@ -46,7 +46,7 @@ namespace SkillBridgeChat.Hubs
                 IsRead = false,
                 Ulid = Ulid.NewUlid().ToString()
             });
-            await Clients.All.SendMessage(user!.Username, message);
+            await Clients.All.SendMessage(user!.Username, message, chatName);
         }
     }
 }
