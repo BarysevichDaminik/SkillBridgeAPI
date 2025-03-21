@@ -13,32 +13,45 @@ namespace SkillBridgeChat.Hubs
         {
             this.DBContext = _skillbridgeContext;
         }
-        public async Task SendMessage(string chatName, string username, string message)
+        public override async Task OnConnectedAsync()
+        {
+            var chatId = Context.GetHttpContext()?.Request.Query["chatId"];
+            _ = long.TryParse(chatId, out long longChatId);
+
+            if (!string.IsNullOrEmpty(chatId))
+            {
+                long? exchangeId = (await DBContext.Chats.FirstOrDefaultAsync(c => c.ChatId == longChatId))?.ExchangeId;
+                await Groups.AddToGroupAsync(Context.ConnectionId, exchangeId!.Value.ToString());
+            }
+            else return;
+            await base.OnConnectedAsync();
+        }
+        public async Task SendMessage(string chatId, string username, string message)
         {
             if (username is not null) username = username.Replace("\"", String.Empty);
             User? user = await DBContext.Users.FirstOrDefaultAsync(u => u.Ulid == username);
             long? userId = user?.UserId;
-            long? chatId = (await DBContext.Chats.FirstOrDefaultAsync(u => u.ChatName == chatName))?.ChatId;
-            if (userId == null || chatId == null) return;
+            string? chatName = (await DBContext.Chats.FirstOrDefaultAsync(u => u.ChatId == long.Parse(chatId)))?.ChatName;
+            if (userId == null || chatName == null || chatId == null) return;
             List<Message> value = default!;
-            if (messages.TryGetValue(chatName, out _))
+            if (messages.TryGetValue(chatId, out _))
             {
-                value = messages[chatName];
+                value = messages[chatId];
                 if (value.Count >= 30)
                 {
                     await DBContext.Messages.AddRangeAsync(value);
                     await DBContext.SaveChangesAsync();
-                    messages[chatName] = [];
+                    messages[chatId] = [];
                 }
             }
-            else if(value is null)
+            else if (value is null)
             {
-                messages.Add(chatName, []);
-                value = messages[chatName];
+                messages.Add(chatId, []);
+                value = messages[chatId];
             }
             value!.Add(new Message
             {
-                ChatId = (long)chatId,
+                ChatId = long.Parse(chatId),
                 UserId = (long)userId,
                 Message1 = message,
                 SentDate = DateTime.UtcNow,
@@ -46,7 +59,7 @@ namespace SkillBridgeChat.Hubs
                 IsRead = false,
                 Ulid = Ulid.NewUlid().ToString()
             });
-            await Clients.All.SendMessage(user!.Username, message, chatName);
+            await Clients.All.SendMessage(user!.Username, message, chatName, chatId);
         }
     }
 }
