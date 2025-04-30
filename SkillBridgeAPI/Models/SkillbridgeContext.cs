@@ -50,11 +50,22 @@ public partial class SkillbridgeContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_date");
             entity.Property(e => e.ExchangeId).HasColumnName("exchange_id");
+            entity.Property(e => e.Skill1Id).HasColumnName("skill1_id");
+            entity.Property(e => e.Skill2Id).HasColumnName("skill2_id");
 
             entity.HasOne(d => d.Exchange).WithMany(p => p.Chats)
                 .HasForeignKey(d => d.ExchangeId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("chat_exchange_id_fkey");
+
+            entity.HasOne(d => d.Skill1).WithMany(p => p.ChatSkill1s)
+                .HasForeignKey(d => d.Skill1Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("skill1_id");
+
+            entity.HasOne(d => d.Skill2).WithMany(p => p.ChatSkill2s)
+                .HasForeignKey(d => d.Skill2Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("skill2_id");
         });
 
         modelBuilder.Entity<Exchange>(entity =>
@@ -69,16 +80,30 @@ public partial class SkillbridgeContext : DbContext
 
             entity.Property(e => e.ExchangeId).HasColumnName("exchange_id");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.Skill1Id).HasColumnName("skill1Id");
+            entity.Property(e => e.Skill2Id).HasColumnName("skill2Id");
             entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.UserId1).HasColumnName("user_id_1");
             entity.Property(e => e.UserId2).HasColumnName("user_id_2");
 
+            entity.HasOne(d => d.Skill1).WithMany(p => p.ExchangeSkill1s)
+                .HasForeignKey(d => d.Skill1Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("skill1Id");
+
+            entity.HasOne(d => d.Skill2).WithMany(p => p.ExchangeSkill2s)
+                .HasForeignKey(d => d.Skill2Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("skill2Id");
+
             entity.HasOne(d => d.UserId1Navigation).WithMany(p => p.ExchangeUserId1Navigations)
                 .HasForeignKey(d => d.UserId1)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("exchange_user_id_1_fkey");
 
             entity.HasOne(d => d.UserId2Navigation).WithMany(p => p.ExchangeUserId2Navigations)
                 .HasForeignKey(d => d.UserId2)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("exchange_user_id_2_fkey");
 
             entity.HasMany(d => d.ChatsNavigation).WithMany(p => p.Exchanges)
@@ -116,11 +141,12 @@ public partial class SkillbridgeContext : DbContext
             entity.Property(e => e.IsRead)
                 .HasDefaultValue(false)
                 .HasColumnName("is_read");
-            entity.Property(e => e.message).HasColumnName("message");
+            entity.Property(e => e.Message1).HasColumnName("message");
             entity.Property(e => e.MessageType).HasColumnName("message_type");
             entity.Property(e => e.SentDate)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("sent_date");
+            entity.Property(e => e.Ulid).HasColumnName("ulid");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Chat).WithMany(p => p.Messages)
@@ -197,6 +223,9 @@ public partial class SkillbridgeContext : DbContext
                 .HasColumnName("created_at");
             entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.FirstName).HasColumnName("first_name");
+            entity.Property(e => e.IsSearching)
+                .HasDefaultValue(false)
+                .HasColumnName("isSearching");
             entity.Property(e => e.LastName).HasColumnName("last_name");
             entity.Property(e => e.LoginAttempts)
                 .HasDefaultValue((short)0)

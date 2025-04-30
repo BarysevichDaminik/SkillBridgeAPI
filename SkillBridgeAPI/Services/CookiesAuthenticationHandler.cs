@@ -91,7 +91,7 @@ namespace SkillBridgeAPI.Services
                 return AuthenticateResult.Fail($"Authentication failed after validation: {ex.Message}");
             }
         }
-        public static bool ValidateToken(string token)
+        public bool ValidateToken(string token)
         {
             string[] parts = token.Split('.');
             if (parts.Length != 3)

@@ -2,17 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using SkillBridgeChat.Models;
 using SkillBridgeChat.Source;
+using System.Collections.Concurrent;
 
 namespace SkillBridgeChat.Hubs
 {
-    public class ChatHub : Hub<IMessageHub>
+    public class ChatHub(SkillbridgeContext DBContext/*, ILogger<ChatHub> logger*/) : Hub<IMessageHub>
     {
-        private readonly SkillbridgeContext DBContext;
-        public static Dictionary<string, List<Message>> messages = [];
-        public ChatHub(SkillbridgeContext _skillbridgeContext)
-        {
-            this.DBContext = _skillbridgeContext;
-        }
+        internal static ConcurrentDictionary<string, List<Message>> messages = [];
         public override async Task OnConnectedAsync()
         {
             var chatId = Context.GetHttpContext()?.Request.Query["chatId"];
@@ -23,43 +19,46 @@ namespace SkillBridgeChat.Hubs
                 long? exchangeId = (await DBContext.Chats.FirstOrDefaultAsync(c => c.ChatId == longChatId))?.ExchangeId;
                 await Groups.AddToGroupAsync(Context.ConnectionId, exchangeId!.Value.ToString());
             }
-            else return;
+            else { return; }
             await base.OnConnectedAsync();
         }
-        public async Task SendMessage(string chatId, string username, string message)
+        public async Task SendMessage(long chatId, string username, string message)
         {
             if (username is not null) username = username.Replace("\"", String.Empty);
             User? user = await DBContext.Users.FirstOrDefaultAsync(u => u.Ulid == username);
             long? userId = user?.UserId;
-            string? chatName = (await DBContext.Chats.FirstOrDefaultAsync(u => u.ChatId == long.Parse(chatId)))?.ChatName;
-            if (userId == null || chatName == null || chatId == null) return;
+            Chat? chat = await DBContext.Chats.FirstOrDefaultAsync(u => u.ChatId == chatId);
+            long? exchangeId = chat?.ExchangeId;
+            string? chatName = chat?.ChatName;
+            if (userId == null || chatName == null || chatId == 0) return;
             List<Message> value = default!;
-            if (messages.TryGetValue(chatId, out _))
+            if (messages.TryGetValue(chatId.ToString(), out _))
             {
-                value = messages[chatId];
+                value = messages[chatId.ToString()];
                 if (value.Count >= 30)
                 {
                     await DBContext.Messages.AddRangeAsync(value);
                     await DBContext.SaveChangesAsync();
-                    messages[chatId] = [];
+                    messages[chatId.ToString()] = [];
                 }
             }
             else if (value is null)
             {
-                messages.Add(chatId, []);
-                value = messages[chatId];
+                messages.TryAdd(chatId.ToString(), []);
+                value = messages[chatId.ToString()];
             }
+            string ulid = Ulid.NewUlid().ToString();
             value!.Add(new Message
             {
-                ChatId = long.Parse(chatId),
+                ChatId = chatId,
                 UserId = (long)userId,
                 Message1 = message,
                 SentDate = DateTime.UtcNow,
                 MessageType = "text",
                 IsRead = false,
-                Ulid = Ulid.NewUlid().ToString()
+                Ulid = ulid
             });
-            await Clients.All.SendMessage(user!.Username, message, chatName, chatId);
+            await Clients.Group(exchangeId.ToString()!).SendMessage(user!.Username, message, chatName, chatId, ulid);
         }
     }
 }

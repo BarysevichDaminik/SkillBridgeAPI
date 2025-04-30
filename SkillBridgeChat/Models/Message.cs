@@ -21,7 +21,7 @@ public partial class Message
 
     public bool? IsRead { get; set; }
 
-    public string Ulid { get; set; } = null!;
+    public string? Ulid { get; set; }
 
     public virtual Chat Chat { get; set; } = null!;
 

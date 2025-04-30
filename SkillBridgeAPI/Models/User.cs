@@ -33,6 +33,8 @@ public partial class User
 
     public short Rating { get; set; }
 
+    public bool IsSearching { get; set; }
+
     public virtual ICollection<Exchange> ExchangeUserId1Navigations { get; set; } = new List<Exchange>();
 
     public virtual ICollection<Exchange> ExchangeUserId2Navigations { get; set; } = new List<Exchange>();

@@ -11,7 +11,7 @@ public partial class Message
 
     public long UserId { get; set; }
 
-    public string? message { get; set; }
+    public string? Message1 { get; set; }
 
     public DateTime? SentDate { get; set; }
 
@@ -21,9 +21,11 @@ public partial class Message
 
     public bool? IsRead { get; set; }
 
+    public string? Ulid { get; set; }
+
     public virtual Chat Chat { get; set; } = null!;
 
-    public virtual ICollection<Reaction> Reactions { get; set; } = [];
+    public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
 
     public virtual User User { get; set; } = null!;
 }

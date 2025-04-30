@@ -15,7 +15,7 @@ using System.Xml.Linq;
 
 namespace SkillBridgeAPI.Controllers
 {
-    [ApiController] 
+    [ApiController]
     [Route("[Controller]")]
     public class AuthController(SkillbridgeContext Context, RefreshTokenService refreshTokenService) : ControllerBase
     {
@@ -29,7 +29,7 @@ namespace SkillBridgeAPI.Controllers
             {
                 if (user.NextAttemptAt >= DateTimeOffset.UtcNow)
                 {
-                    return Results.BadRequest("You have entered incorect password for 3 times. Please wait 1 minute and then try again.");
+                    return Results.BadRequest("You have entered incorrect password for 3 times. Please wait 1 minute and then try again.");
                 }
                 else
                 {
@@ -47,7 +47,7 @@ namespace SkillBridgeAPI.Controllers
                 {
                     user.NextAttemptAt = DateTime.UtcNow.AddMinutes(1);
                     await Context.SaveChangesAsync();
-                    return Results.BadRequest("You have entered incorect password for 3 times. Please wait 1 minute and then try again.");
+                    return Results.BadRequest("You have entered incorrect password for 3 times. Please wait 1 minute and then try again.");
                 }
                 await Context.SaveChangesAsync();
                 return Results.Unauthorized();
@@ -77,7 +77,7 @@ namespace SkillBridgeAPI.Controllers
         {
             if (creds.Username is not null && creds.Email is not null && creds.Password is not null)
             {
-                if(await Context.Users.AnyAsync(u => u.Email == creds.Email))
+                if(await Context.Users.AsNoTracking().AnyAsync(u => u.Email == creds.Email))
                     return Results.BadRequest("User with such an email is already registered.");
 
                 User user = new()
@@ -102,6 +102,20 @@ namespace SkillBridgeAPI.Controllers
                     ExpiredAt = DateTime.UtcNow.AddDays(14),
                     UserId = user.Ulid
                 });
+
+                await Context.Userskills.AddRangeAsync(new Userskill()
+                {
+                    SkillId = 36,
+                    UserId = user.UserId,
+                    SkillType = "own"
+                },
+                new Userskill()
+                {
+                    SkillId = 36,
+                    UserId = user.UserId,
+                    SkillType = "explore"
+                });
+
                 await Context.SaveChangesAsync();
 
                 Response.Cookies.Append("jwtToken", JWTtoken, new CookieOptions
@@ -128,7 +142,7 @@ namespace SkillBridgeAPI.Controllers
         {
             string? ulid = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             if (string.IsNullOrEmpty(ulid)) return Results.BadRequest();
-            string? username = (await Context.Users.FirstOrDefaultAsync(u => u.Ulid == ulid))?.Username;
+            string? username = (await Context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Ulid == ulid))?.Username;
             if (string.IsNullOrEmpty(username)) return Results.BadRequest();
             var result = new { id = ulid, name = username};
             return HttpContext.User.Identity!.IsAuthenticated ? Results.Ok(result) : Results.Unauthorized();
@@ -139,8 +153,8 @@ namespace SkillBridgeAPI.Controllers
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             if (subClaim == null) return Results.BadRequest();
-            await Context.Users.ExecuteUpdateAsync(u =>
-                u.SetProperty(u => u.PwdHash, Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(pwd))))
+            await Context.Users.ExecuteUpdateAsync(u => u
+                .SetProperty(u => u.PwdHash, Convert.ToHexString(SHA3_512.HashData(Encoding.UTF8.GetBytes(pwd))))
                 .SetProperty(u => u.UpdatedAt, DateTime.UtcNow));
             return Results.Ok();
         }
@@ -149,9 +163,48 @@ namespace SkillBridgeAPI.Controllers
         public async Task<IResult> DeleteUser()
         {
             var subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            await Context.Users.Where(u => u.Ulid == subClaim).ExecuteDeleteAsync();
-            await Context.RefreshTokens.Where(r => r.UserId == subClaim).ExecuteDeleteAsync();
+            if (subClaim == null) return Results.BadRequest();
+
+            await Context.Users
+                .AsNoTracking()
+                .Where(u => u.Ulid == subClaim)
+                .ExecuteDeleteAsync();
+            await Context.RefreshTokens
+                .AsNoTracking()
+                .Where(r => r.UserId == subClaim)
+                .ExecuteDeleteAsync();
             return Results.Ok();
+        }
+
+        [HttpDelete("logout")]
+        public IResult LogOut()
+        {
+            string? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (subClaim is null) return Results.BadRequest();
+
+            Response.Cookies.Append("jwtToken", "", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1)
+            });
+
+            Response.Cookies.Append("refreshToken", "", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1)
+            });
+
+            return Results.Ok();
+        }
+
+        [HttpGet("danik")]
+        public IResult LogIn()
+        {
+            return Results.Ok("hello Danik");
         }
     }
 }

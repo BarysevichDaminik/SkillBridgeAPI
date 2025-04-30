@@ -11,34 +11,39 @@ namespace SkillBridgeChat.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ChatHubController : ControllerBase
+    public class ChatHubController(/*ILogger<ChatHubController> logger,*/ SkillbridgeContext DBContext) : ControllerBase
     {
-        readonly IHubContext<ChatHub, IMessageHub> msgHub;
-        public readonly ILogger<ChatHubController> logger;
-        private readonly SkillbridgeContext DBContext;
-        public ChatHubController(ILogger<ChatHubController> logger, IHubContext<ChatHub, IMessageHub> msgHub, SkillbridgeContext DBContext)
-        {
-            this.logger = logger;
-            this.msgHub = msgHub;
-            this.DBContext = DBContext;
-        }
         [HttpDelete("clearMsgs")]
-        public async Task<IResult> ClearMsgs([FromQuery] string chatName)
+        public async Task<IResult> ClearMessages([FromBody] MsgToDeleteDTO chatId)
         {
             foreach (List<Message> item in ChatHub.messages.Values)
             {
                 await DBContext.Messages.AddRangeAsync(item);
-                ChatHub.messages[chatName] = [];
+                ChatHub.messages[chatId.ChatId.ToString()] = [];
             }
             try
             {
                 await DBContext.SaveChangesAsync();
                 return Results.Ok();
             }
-            catch (Exception) 
+            catch (Exception)
             {
                 return Results.InternalServerError();
             }
+        }
+
+        [HttpDelete("delMsg")]
+        public async Task<IResult> DeleteMessage([FromBody] MsgToDeleteDTO msgToDeleteDTO)
+        {
+            Chat? chat = await DBContext.Chats
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.ChatId == msgToDeleteDTO.ChatId);
+            if (chat is null) return Results.BadRequest();
+            int result = await DBContext.Messages
+                .AsNoTracking()
+                .Where(m => m.ChatId == chat.ChatId && m.Ulid == msgToDeleteDTO.Ulid)
+                .ExecuteDeleteAsync();
+            return result == 1 ? Results.Ok() : result == 0 ? Results.NotFound() : Results.Conflict();
         }
     }
 }
